@@ -17,10 +17,14 @@
 mod maps;
 mod packet;
 
-use aya_ebpf::{helpers::bpf_get_socket_cookie, macros::cgroup_skb, programs::SkBuffContext};
+use aya_ebpf::{
+    helpers::{bpf_get_current_pid_tgid, bpf_get_socket_cookie},
+    macros::{cgroup_skb, cgroup_sock},
+    programs::{SkBuffContext, SockContext},
+};
 
-/// Código de retorno que permite el paso del paquete (1 = permitir; 0 lo
-/// bloquearía). Solo medimos, nunca bloqueamos.
+/// Código de retorno que permite el paso (1 = permitir; 0 bloquearía). Solo
+/// medimos, nunca bloqueamos ni rechazamos la creación de sockets.
 const ALLOW: i32 = 1;
 
 /// Devuelve el socket cookie del paquete: un id único y estable del socket que
@@ -44,6 +48,18 @@ pub fn netusage_egress(ctx: SkBuffContext) -> i32 {
     if let Some(len) = packet::packet_len(&ctx) {
         maps::add_tx(socket_cookie(&ctx), len);
     }
+    ALLOW
+}
+
+/// Corre en el contexto del proceso que crea un socket. Publica `(cookie, pid)`
+/// en el ringbuf para que el espacio de usuario resuelva el ejecutable dueño.
+/// El `pid` es el tgid (PID de proceso, el que usa `/proc/<pid>`): los 32 bits
+/// altos de `bpf_get_current_pid_tgid`.
+#[cgroup_sock(sock_create)]
+pub fn netusage_sock_create(ctx: SockContext) -> i32 {
+    let cookie = unsafe { bpf_get_socket_cookie(ctx.sock as *mut _) };
+    let pid = (unsafe { bpf_get_current_pid_tgid() } >> 32) as u32;
+    maps::emit_sock_birth(cookie, pid);
     ALLOW
 }
 

@@ -13,11 +13,33 @@
 //! menos usados (sockets muertos) en vez de fallar. El espacio de usuario
 //! acumula por deltas, así que un desalojo no pierde lo ya contado.
 
-use aya_ebpf::{macros::map, maps::LruHashMap};
-use netusage_common::counters::{SocketCookie, TRAFFIC_MAP_CAPACITY};
+use aya_ebpf::{
+    macros::map,
+    maps::{LruHashMap, RingBuf},
+};
+use netusage_common::counters::{
+    SockBirth, SocketCookie, SOCK_BIRTH_RING_BYTES, TRAFFIC_MAP_CAPACITY,
+};
 
 /// Bandera de `insert`: 0 equivale a `BPF_ANY` (crear o sobrescribir).
 const BPF_ANY: u64 = 0;
+
+/// Ringbuf por el que el kernel publica el nacimiento de cada socket
+/// (`cookie`, `pid`) para que el espacio de usuario resuelva el ejecutable.
+#[map(name = "SOCK_BIRTH")]
+static SOCK_BIRTH: RingBuf = RingBuf::with_byte_size(SOCK_BIRTH_RING_BYTES, 0);
+
+/// Publica en el ringbuf el nacimiento de un socket. Si el ringbuf está lleno,
+/// el evento se descarta silenciosamente (su tráfico caería en "Sistema /
+/// Otros" hasta que el socket vuelva a verse o se cierre).
+pub fn emit_sock_birth(cookie: SocketCookie, pid: u32) {
+    let birth = SockBirth {
+        cookie,
+        pid,
+        _pad: 0,
+    };
+    let _ = SOCK_BIRTH.output(&birth, 0);
+}
 
 /// Bytes recibidos (ingress) acumulados por socket cookie.
 #[map(name = "RX_BYTES")]
