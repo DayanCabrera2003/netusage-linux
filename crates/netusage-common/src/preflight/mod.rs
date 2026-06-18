@@ -6,6 +6,7 @@
 //! la agregacion del veredicto final.
 
 pub mod btf;
+pub mod caps;
 pub mod cgroup;
 pub mod kernel;
 

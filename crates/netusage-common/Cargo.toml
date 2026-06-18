@@ -6,4 +6,5 @@ description = "Tipos compartidos y comprobaciones de entorno (preflight) de netu
 license = "MIT"
 
 [dependencies]
-rustix = { version = "1", features = ["fs", "system"] }
+rustix = { version = "1", features = ["fs", "system", "process"] }
+caps = "0.5"
