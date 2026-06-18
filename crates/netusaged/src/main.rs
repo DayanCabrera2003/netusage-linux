@@ -13,6 +13,7 @@ mod counters;
 mod identity;
 mod loader;
 mod monitor;
+mod report;
 mod resolver;
 mod sampler;
 mod supervisor;
@@ -43,6 +44,7 @@ fn main() {
 
     let result = match cli.command {
         Some(Command::Run { interval_secs, db }) => run(interval_secs, db),
+        Some(Command::Report { period, db }) => report::run(period, &db),
         None => {
             println!(
                 "netusaged: sin acción. Usa --check para diagnosticar o `run` para monitorizar."

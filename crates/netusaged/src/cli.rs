@@ -5,7 +5,7 @@
 
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 
 /// Demonio de netusage: monitor de uso de datos por aplicación.
 #[derive(Debug, Parser)]
@@ -35,4 +35,24 @@ pub enum Command {
         #[arg(long)]
         db: Option<PathBuf>,
     },
+
+    /// Consulta el consumo persistido por periodo.
+    Report {
+        /// Periodo a consultar. Si se omite, se imprimen los cuatro.
+        #[arg(long, value_enum)]
+        period: Option<ReportPeriod>,
+
+        /// Ruta de la base de datos SQLite a consultar.
+        #[arg(long)]
+        db: PathBuf,
+    },
+}
+
+/// Periodos consultables por el subcomando `report`.
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum ReportPeriod {
+    Today,
+    Week,
+    Month,
+    LastMonth,
 }
