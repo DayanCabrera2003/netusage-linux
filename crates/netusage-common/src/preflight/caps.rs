@@ -82,21 +82,33 @@ mod tests {
 
     #[test]
     fn root_is_ok() {
-        assert_eq!(classify(privs(true, false, false, false)).status, CheckStatus::Ok);
+        assert_eq!(
+            classify(privs(true, false, false, false)).status,
+            CheckStatus::Ok
+        );
     }
 
     #[test]
     fn full_caps_is_ok() {
-        assert_eq!(classify(privs(false, true, true, true)).status, CheckStatus::Ok);
+        assert_eq!(
+            classify(privs(false, true, true, true)).status,
+            CheckStatus::Ok
+        );
     }
 
     #[test]
     fn partial_caps_is_warn() {
-        assert_eq!(classify(privs(false, true, true, false)).status, CheckStatus::Warn);
+        assert_eq!(
+            classify(privs(false, true, true, false)).status,
+            CheckStatus::Warn
+        );
     }
 
     #[test]
     fn no_privileges_is_warn() {
-        assert_eq!(classify(privs(false, false, false, false)).status, CheckStatus::Warn);
+        assert_eq!(
+            classify(privs(false, false, false, false)).status,
+            CheckStatus::Warn
+        );
     }
 }

@@ -64,17 +64,19 @@ impl Report {
     /// El sistema es apto si ninguna comprobacion termino en `Fail`.
     /// Los `Warn` se reportan pero no bloquean.
     pub fn is_apt(&self) -> bool {
-        !self
-            .results
-            .iter()
-            .any(|r| r.status == CheckStatus::Fail)
+        !self.results.iter().any(|r| r.status == CheckStatus::Fail)
     }
 
     /// Formatea el informe como texto plano, una linea por comprobacion.
     pub fn format_plain(&self) -> String {
         let mut out = String::new();
         for r in &self.results {
-            out.push_str(&format!("[{}] {}: {}\n", r.status.label(), r.name, r.detail));
+            out.push_str(&format!(
+                "[{}] {}: {}\n",
+                r.status.label(),
+                r.name,
+                r.detail
+            ));
         }
         out
     }
