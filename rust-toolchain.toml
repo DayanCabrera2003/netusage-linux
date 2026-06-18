@@ -1,0 +1,8 @@
+# Toolchain del espacio de usuario del workspace (demonio, common, store, ipc, tui).
+# Se fija el canal estable para builds reproducibles del lado usuario.
+# El crate eBPF (crates/netusage-ebpf) requiere nightly + rust-src y lleva su
+# propio rust-toolchain.toml, porque la compilacion eBPF de aya necesita
+# compilar core con build-std al target bpfel-unknown-none.
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy"]
