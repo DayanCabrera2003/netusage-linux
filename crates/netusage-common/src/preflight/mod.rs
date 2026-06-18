@@ -7,6 +7,7 @@
 
 pub mod btf;
 pub mod cgroup;
+pub mod kernel;
 
 /// Estado de una comprobacion individual.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
