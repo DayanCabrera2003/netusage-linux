@@ -4,6 +4,7 @@
 //! del dominio. Cada responsabilidad vive en su propio módulo (esquema,
 //! configuración, periodos, agregación, retención).
 
+mod aggregate;
 mod apps;
 mod config;
 mod error;
@@ -12,6 +13,7 @@ mod samples;
 mod schema;
 mod store;
 
+pub use aggregate::{AppUsage, UsageTotal};
 pub use config::{StoreConfig, WeekStart};
 pub use error::{Result, StoreError};
 pub use period::{Period, PeriodBounds};
