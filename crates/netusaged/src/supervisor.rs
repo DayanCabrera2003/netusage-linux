@@ -25,7 +25,7 @@ use aya::Ebpf;
 use netusage_common::counters::CgroupInode;
 
 use crate::attach::{attach_cgroup, detach_cgroup, load_programs, AttachedLinks};
-use crate::cgroup::discovery::{app_slice_path, discover_app_cgroups};
+use crate::cgroup::discovery::{discover_app_cgroups, user_app_slices};
 use crate::cgroup::identity::{parse_scope, AppIdentity};
 use crate::cgroup::inode::cgroup_inode;
 use crate::cgroup::registry::{CgroupEntry, CgroupRegistry};
@@ -44,27 +44,36 @@ type Finalized = HashMap<String, AppUsage>;
 pub fn run(mut bpf: Ebpf, root: &Path, interval: Duration) -> Result<()> {
     load_programs(&mut bpf)?;
 
-    let uid = rustix::process::getuid().as_raw();
-    let app_slice = app_slice_path(root, uid);
+    // Se cubren todas las app.slice de usuario, no la del UID efectivo: bajo
+    // `sudo` ese UID es 0 (root) y las apps viven en la slice del usuario real.
+    let app_slices = user_app_slices(root)?;
+    if app_slices.is_empty() {
+        tracing::warn!(
+            "no se encontró ninguna app.slice de usuario bajo {}; ¿hay una sesión gráfica activa?",
+            root.join("user.slice").display()
+        );
+    }
 
     // Vigilar antes de descubrir para no perder nacimientos durante el escaneo.
-    let (_watcher, events) = spawn_watcher(app_slice.clone())?;
+    let (_watcher, events) = spawn_watcher(app_slices.clone())?;
 
     let mut registry: CgroupRegistry<AttachedLinks> = CgroupRegistry::new();
     let mut finalized: Finalized = HashMap::new();
 
-    for path in discover_app_cgroups(&app_slice)? {
-        let identity = parse_scope(&file_name(&path));
-        if identity.is_app {
-            if let Ok(inode) = cgroup_inode(&path) {
-                attach(&mut bpf, &mut registry, &path, inode, identity);
+    for base in &app_slices {
+        for path in discover_app_cgroups(base)? {
+            let identity = parse_scope(&file_name(&path));
+            if identity.is_app {
+                if let Ok(inode) = cgroup_inode(&path) {
+                    attach(&mut bpf, &mut registry, &path, inode, identity);
+                }
             }
         }
     }
     tracing::info!(
-        "atribución activa: {} apps enganchadas bajo {} (Ctrl-C para salir)",
+        "atribución activa: {} apps enganchadas en {} slice(s) de usuario (Ctrl-C para salir)",
         registry.len(),
-        app_slice.display()
+        app_slices.len()
     );
 
     loop {
