@@ -49,3 +49,49 @@ pub fn identity_from_exe_path(exe: &Path) -> AppIdentity {
         display_name,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    #[test]
+    fn brave_exe_resolves_to_brave() {
+        let id = identity_from_exe_path(Path::new("/opt/brave.com/brave/brave"));
+        assert_eq!(id.app_key, "/opt/brave.com/brave/brave");
+        assert_eq!(id.display_name, "brave");
+    }
+
+    #[test]
+    fn firefox_exe_resolves_to_firefox() {
+        let id = identity_from_exe_path(Path::new("/usr/lib/firefox/firefox"));
+        assert_eq!(id.display_name, "firefox");
+    }
+
+    #[test]
+    fn interpreter_is_grouped_by_binary() {
+        // Las apps interpretadas se agrupan por el intérprete (decisión asumida).
+        let id = identity_from_exe_path(Path::new("/usr/bin/python3.12"));
+        assert_eq!(id.display_name, "python3.12");
+    }
+
+    #[test]
+    fn path_with_spaces_and_root_never_panic() {
+        let id = identity_from_exe_path(Path::new("/opt/My App/my app"));
+        assert_eq!(id.display_name, "my app");
+        // Ruta sin componente final: degrada a la propia ruta, sin panic.
+        let id_root = identity_from_exe_path(Path::new("/"));
+        assert_eq!(id_root.display_name, "/");
+    }
+
+    #[test]
+    fn pid_zero_is_unresolved() {
+        assert!(resolve_pid(0).is_none());
+    }
+
+    #[test]
+    fn nonexistent_pid_is_unresolved() {
+        // Un PID altísimo casi seguro no existe; nunca debe hacer panic.
+        assert!(resolve_pid(u32::MAX).is_none());
+    }
+}
