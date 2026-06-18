@@ -6,8 +6,10 @@
 
 mod apps;
 mod error;
+mod samples;
 mod schema;
 mod store;
 
 pub use error::{Result, StoreError};
+pub use samples::SampleDelta;
 pub use store::Store;
