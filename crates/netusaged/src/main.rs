@@ -5,6 +5,7 @@
 
 mod aggregator;
 mod attach;
+mod backfill;
 mod cgroup;
 mod check;
 mod cli;

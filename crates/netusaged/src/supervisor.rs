@@ -40,6 +40,14 @@ pub fn run(mut bpf: Ebpf, root: &Path, interval: Duration) -> Result<()> {
     let cookie_map: CookieMap = Arc::new(Mutex::new(HashMap::new()));
     let _resolver = spawn_resolver(ring, Arc::clone(&cookie_map));
 
+    // Precargar los sockets ya abiertos antes del arranque (su tráfico, si no,
+    // caería en "Sistema / Otros"; típico del túnel de un VPN o conexiones
+    // persistentes del navegador).
+    match crate::backfill::backfill(&cookie_map) {
+        Ok(n) => tracing::info!("backfill: {n} sockets preexistentes correlacionados"),
+        Err(err) => tracing::warn!("backfill de sockets preexistentes falló: {err:#}"),
+    }
+
     tracing::info!(
         "atribución por aplicación activa en {} (Ctrl-C para salir)",
         root.display()
