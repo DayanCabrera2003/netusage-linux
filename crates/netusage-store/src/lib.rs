@@ -1,3 +1,9 @@
-//! Capa de persistencia SQLite y queries de agregacion temporal.
+//! Capa de persistencia SQLite y queries de agregación temporal de netusage.
 //!
-//! Vacio en la Fase 0; se implementa en la Fase 3.
+//! Fachada del crate: expone `Store` (la conexión y sus operaciones) y los tipos
+//! del dominio. Cada responsabilidad vive en su propio módulo (esquema,
+//! configuración, periodos, agregación, retención).
+
+mod error;
+
+pub use error::{Result, StoreError};
