@@ -6,6 +6,7 @@
 mod cgroup;
 mod check;
 mod cli;
+mod loader;
 
 use clap::Parser;
 
