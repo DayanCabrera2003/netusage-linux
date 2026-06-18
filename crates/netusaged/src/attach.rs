@@ -7,10 +7,15 @@
 //! falta (`attach_cgroup`), guardando los identificadores de link para poder
 //! desengancharlos después (`detach_cgroup`).
 //!
-//! Se usa `CgroupAttachMode::AllowMultiple` (no `Single`): el escritorio y
-//! systemd ya pueden tener programas BPF enganchados en cgroups padre, y este
-//! modo permite coexistir sin desplazarlos. Nota: el plan lo llamaba `Multi`;
-//! en aya 0.13.x el variant es `AllowMultiple` (ver desviaciones).
+//! Modo de enganche: en kernels modernos (>= 5.7) aya engancha vía
+//! `bpf_link_create`. Para los links de cgroup el kernel exige `flags == 0`
+//! (`cgroup_bpf_link_attach` devuelve EINVAL con cualquier flag), de modo que
+//! `CgroupAttachMode::AllowMultiple` (que añade `BPF_F_ALLOW_MULTI`) falla. Se
+//! usa `CgroupAttachMode::Single`, que pasa `flags == 0`: los bpf_links ya
+//! coexisten por naturaleza (varios links en el mismo o en distintos cgroups,
+//! sin desplazar a los programas que systemd pueda tener en cgroups padre).
+//! El plan pedía coexistencia tipo "Multi"; con el enganche basado en links eso
+//! se obtiene con `Single`. Ver documentacion/desviaciones/fase-2.md.
 
 use anyhow::{Context, Result};
 use aya::programs::cgroup_skb::CgroupSkbLinkId;
@@ -74,7 +79,7 @@ fn attach_one(
 ) -> Result<CgroupSkbLinkId> {
     let program: &mut CgroupSkb = program_mut(bpf, name)?;
     program
-        .attach(cgroup_fd, attach_type, CgroupAttachMode::AllowMultiple)
+        .attach(cgroup_fd, attach_type, CgroupAttachMode::Single)
         .with_context(|| format!("enganchando '{name}' al cgroup"))
 }
 
