@@ -7,6 +7,7 @@ mod attach;
 mod cgroup;
 mod check;
 mod cli;
+mod fallback;
 mod loader;
 mod monitor;
 
