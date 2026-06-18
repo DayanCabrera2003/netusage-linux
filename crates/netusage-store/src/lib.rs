@@ -5,11 +5,13 @@
 //! configuración, periodos, agregación, retención).
 
 mod apps;
+mod config;
 mod error;
 mod samples;
 mod schema;
 mod store;
 
+pub use config::{StoreConfig, WeekStart};
 pub use error::{Result, StoreError};
 pub use samples::SampleDelta;
 pub use store::Store;
