@@ -19,12 +19,6 @@
 //! Es la misma decisión de la Fase 1 (ver desviaciones), llevada al modelo por
 //! cgroup.
 
-/// Clave de los mapas de contadores: el cgroup id (Fase 2 por cgroup, obsoleto).
-///
-/// Se conserva mientras quede código que lo referencie; se elimina al retirar el
-/// enfoque por cgroup. La atribución por ejecutable usa `SocketCookie`.
-pub type CgroupInode = u64;
-
 /// Clave de los mapas de contadores: el socket cookie.
 ///
 /// Es el valor que devuelve el helper `bpf_get_socket_cookie`, único y estable

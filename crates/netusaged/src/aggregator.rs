@@ -75,12 +75,15 @@ impl Aggregator {
                     SYSTEM_OTHER_DISPLAY.to_string(),
                 )
             });
-            let entry = self.totals.entry(app_key.clone()).or_insert_with(|| AppUsage {
-                app_key,
-                display_name,
-                rx: 0,
-                tx: 0,
-            });
+            let entry = self
+                .totals
+                .entry(app_key.clone())
+                .or_insert_with(|| AppUsage {
+                    app_key,
+                    display_name,
+                    rx: 0,
+                    tx: 0,
+                });
             entry.rx = entry.rx.saturating_add(drx);
             entry.tx = entry.tx.saturating_add(dtx);
         }
@@ -198,16 +201,13 @@ mod tests {
     #[test]
     fn sorts_by_total_descending() {
         let mut agg = Aggregator::new();
-        let out = agg.sample(
-            &[(1, 10, 0)],
-            |c| {
-                if c == 1 {
-                    Some(("a".into(), "a".into()))
-                } else {
-                    None
-                }
-            },
-        );
+        let out = agg.sample(&[(1, 10, 0)], |c| {
+            if c == 1 {
+                Some(("a".into(), "a".into()))
+            } else {
+                None
+            }
+        });
         let out2 = {
             // Añadir una app con más tráfico y comprobar que queda arriba.
             agg.sample(&[(1, 10, 0), (2, 500, 0)], |c| match c {
