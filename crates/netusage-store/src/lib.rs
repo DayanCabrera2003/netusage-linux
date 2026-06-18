@@ -4,6 +4,7 @@
 //! del dominio. Cada responsabilidad vive en su propio módulo (esquema,
 //! configuración, periodos, agregación, retención).
 
+mod apps;
 mod error;
 mod schema;
 mod store;

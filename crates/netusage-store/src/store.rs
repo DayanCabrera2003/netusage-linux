@@ -4,6 +4,7 @@
 //! de negocio (apps, samples, agregación, retención) viven en sus módulos y se
 //! implementan como métodos de `Store` en esos archivos.
 
+use std::collections::HashMap;
 use std::path::Path;
 
 use rusqlite::Connection;
@@ -14,6 +15,8 @@ use crate::schema;
 /// Conexión a la base de datos de netusage, ya migrada y configurada.
 pub struct Store {
     pub(crate) conn: Connection,
+    /// Caché `app_key -> app_id` para no resolver la fila en cada muestra.
+    pub(crate) app_cache: HashMap<String, i64>,
 }
 
 impl Store {
@@ -37,7 +40,10 @@ impl Store {
             "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA foreign_keys=ON;",
         )?;
         schema::migrate(&mut conn)?;
-        Ok(Store { conn })
+        Ok(Store {
+            conn,
+            app_cache: HashMap::new(),
+        })
     }
 }
 
