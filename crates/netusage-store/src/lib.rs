@@ -6,5 +6,7 @@
 
 mod error;
 mod schema;
+mod store;
 
 pub use error::{Result, StoreError};
+pub use store::Store;
