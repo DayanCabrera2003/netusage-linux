@@ -1,0 +1,8 @@
+# Configuracion de compilacion del crate eBPF.
+# Se compila al target BPF little-endian, reconstruyendo core con build-std
+# (requiere nightly + rust-src). El enlazado lo hace bpf-linker.
+[build]
+target = "bpfel-unknown-none"
+
+[unstable]
+build-std = ["core"]

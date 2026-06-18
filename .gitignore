@@ -1,5 +1,5 @@
-# Artefactos de compilacion de Cargo.
-/target
+# Artefactos de compilacion de Cargo (workspace y crate eBPF, que compila aparte).
+target/
 
 # Copias de seguridad de rustfmt.
 **/*.rs.bk

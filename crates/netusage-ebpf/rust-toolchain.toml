@@ -1,0 +1,4 @@
+# El crate eBPF requiere nightly + rust-src para compilar core al target BPF.
+[toolchain]
+channel = "nightly"
+components = ["rust-src", "rustfmt", "clippy"]

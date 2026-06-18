@@ -9,3 +9,6 @@ members = [
     "crates/netusage-ipc",
     "crates/netusage-tui",
 ]
+# El crate eBPF se compila aparte (target bpfel-unknown-none, nightly,
+# build-std), por eso se excluye del workspace normal.
+exclude = ["crates/netusage-ebpf"]

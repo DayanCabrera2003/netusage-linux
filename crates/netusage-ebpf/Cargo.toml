@@ -1,0 +1,26 @@
+[package]
+name = "netusage-ebpf"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Programas eBPF (kernel-side) de netusage"
+license = "MIT"
+
+[dependencies]
+aya-ebpf = "0.1"
+
+[[bin]]
+name = "netusage-ebpf"
+path = "src/main.rs"
+test = false
+bench = false
+
+# El crate eBPF se compila al target bpfel-unknown-none con panic=abort.
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+debug = 2
+codegen-units = 1
+lto = true
