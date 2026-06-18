@@ -3,6 +3,7 @@
 //! Responsabilidad unica: inicializar el logging, parsear la CLI y despachar
 //! al subcomando correspondiente.
 
+mod cgroup;
 mod check;
 mod cli;
 
