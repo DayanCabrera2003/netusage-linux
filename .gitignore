@@ -1,0 +1,7 @@
+# Artefactos de compilacion de Cargo.
+/target
+
+# Copias de seguridad de rustfmt.
+**/*.rs.bk
+
+# Cargo.lock se versiona: el workspace produce binarios y queremos builds reproducibles.
