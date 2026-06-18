@@ -3,6 +3,7 @@
 //! Responsabilidad unica: inicializar el logging, parsear la CLI y despachar
 //! al subcomando correspondiente.
 
+mod check;
 mod cli;
 
 use clap::Parser;
@@ -20,10 +21,7 @@ fn main() {
     let cli = Cli::parse();
 
     if cli.check {
-        // La logica real de los preflight checks se conecta en un commit
-        // posterior de la Fase 0 (modulo `check`).
-        println!("netusaged --check: comprobacion de entorno no implementada todavia");
-        std::process::exit(0);
+        std::process::exit(check::run());
     }
 
     println!("netusaged: sin accion. Usa --check para diagnosticar el entorno.");
