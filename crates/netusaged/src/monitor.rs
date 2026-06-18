@@ -21,9 +21,11 @@ use netusage_common::counters::{COUNTER_RX, COUNTER_TX};
 /// (Ctrl-C); en ese momento el kernel desengancha los programas al cerrarse los
 /// descriptores.
 pub fn run_monitor(bpf: &Ebpf, interval: Duration) -> Result<()> {
-    let traffic: Array<_, u64> =
-        Array::try_from(bpf.map("TRAFFIC").context("mapa eBPF 'TRAFFIC' no encontrado")?)
-            .context("el mapa 'TRAFFIC' no es un Array<u64>")?;
+    let traffic: Array<_, u64> = Array::try_from(
+        bpf.map("TRAFFIC")
+            .context("mapa eBPF 'TRAFFIC' no encontrado")?,
+    )
+    .context("el mapa 'TRAFFIC' no es un Array<u64>")?;
 
     let mut prev_rx = 0u64;
     let mut prev_tx = 0u64;

@@ -33,7 +33,9 @@ fn main() {
     let result = match cli.command {
         Some(Command::Run { interval_secs }) => run(interval_secs),
         None => {
-            println!("netusaged: sin acción. Usa --check para diagnosticar o `run` para monitorizar.");
+            println!(
+                "netusaged: sin acción. Usa --check para diagnosticar o `run` para monitorizar."
+            );
             Ok(())
         }
     };

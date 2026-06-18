@@ -24,8 +24,18 @@ fn ebpf_object() -> &'static [u8] {
 pub fn load_and_attach<T: AsFd>(cgroup: T) -> Result<Ebpf> {
     let mut bpf = Ebpf::load(ebpf_object()).context("cargando el objeto eBPF")?;
 
-    attach_program(&mut bpf, "netusage_ingress", cgroup.as_fd(), CgroupSkbAttachType::Ingress)?;
-    attach_program(&mut bpf, "netusage_egress", cgroup.as_fd(), CgroupSkbAttachType::Egress)?;
+    attach_program(
+        &mut bpf,
+        "netusage_ingress",
+        cgroup.as_fd(),
+        CgroupSkbAttachType::Ingress,
+    )?;
+    attach_program(
+        &mut bpf,
+        "netusage_egress",
+        cgroup.as_fd(),
+        CgroupSkbAttachType::Egress,
+    )?;
 
     Ok(bpf)
 }
@@ -43,14 +53,12 @@ fn attach_program(
         .try_into()
         .with_context(|| format!("'{name}' no es un programa cgroup_skb"))?;
 
-    program
-        .load()
-        .with_context(|| {
-            format!(
-                "cargando '{name}' en el kernel (¿faltan privilegios? se necesita root o \
+    program.load().with_context(|| {
+        format!(
+            "cargando '{name}' en el kernel (¿faltan privilegios? se necesita root o \
                  CAP_BPF+CAP_PERFMON+CAP_NET_ADMIN; ver `netusaged --check`)"
-            )
-        })?;
+        )
+    })?;
 
     program
         .attach(cgroup, attach_type, CgroupAttachMode::Single)

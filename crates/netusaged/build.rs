@@ -45,11 +45,17 @@ fn main() {
         }
     }
 
-    let status = cmd.status().expect("no se pudo ejecutar cargo para netusage-ebpf");
+    let status = cmd
+        .status()
+        .expect("no se pudo ejecutar cargo para netusage-ebpf");
     assert!(status.success(), "falló la compilación de netusage-ebpf");
 
     let obj = ebpf_dir.join("target/bpfel-unknown-none/release/netusage-ebpf");
-    assert!(obj.is_file(), "objeto eBPF no encontrado en {}", obj.display());
+    assert!(
+        obj.is_file(),
+        "objeto eBPF no encontrado en {}",
+        obj.display()
+    );
 
     println!("cargo:rerun-if-changed={}", obj.display());
     println!("cargo:rustc-env=NETUSAGE_EBPF_OBJ={}", obj.display());
