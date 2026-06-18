@@ -11,6 +11,7 @@ mod fallback;
 mod identity;
 mod loader;
 mod monitor;
+mod resolver;
 mod supervisor;
 
 use std::time::Duration;
