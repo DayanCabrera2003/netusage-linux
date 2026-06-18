@@ -6,3 +6,13 @@ description = "Capa de persistencia SQLite y queries de agregacion de netusage"
 license = "MIT"
 
 [dependencies]
+# SQLite embebido (bundled): no depende de la libsqlite del sistema.
+rusqlite = { version = "0.40", features = ["bundled"] }
+# Fechas, zonas horarias IANA y DST. Sin features por defecto innecesarias.
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+chrono-tz = "0.10"
+# Serializacion de la configuracion hacia la tabla clave-valor.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Tipo de error del crate.
+thiserror = "2"
