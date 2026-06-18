@@ -7,6 +7,8 @@
 #![no_std]
 #![no_main]
 
+mod maps;
+
 use aya_ebpf::{macros::cgroup_skb, programs::SkBuffContext};
 
 /// Codigo de retorno que permite el paso del paquete (no se filtra nada).
