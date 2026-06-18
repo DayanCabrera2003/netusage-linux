@@ -26,7 +26,15 @@ use crate::monitor;
 use crate::resolver::{spawn_resolver, CookieMap};
 
 /// Engancha los programas y entra en el bucle de monitorización por aplicación.
-pub fn run(mut bpf: Ebpf, root: &Path, interval: Duration) -> Result<()> {
+///
+/// Si `sampler` es `Some`, además de mostrar en vivo persiste las muestras cada
+/// ciclo.
+pub fn run(
+    mut bpf: Ebpf,
+    root: &Path,
+    interval: Duration,
+    mut sampler: Option<crate::sampler::Sampler>,
+) -> Result<()> {
     let cgroup = std::fs::File::open(root)
         .with_context(|| format!("abriendo el cgroup raíz {}", root.display()))?;
     attach_all(&mut bpf, &cgroup)?;
@@ -67,6 +75,13 @@ pub fn run(mut bpf: Ebpf, root: &Path, interval: Duration) -> Result<()> {
 
         prune_cookie_map(&cookie_map, &samples);
         monitor::print_app_list(&usages);
+
+        if let Some(sampler) = sampler.as_mut() {
+            if let Err(err) = sampler.tick(&usages, chrono::Utc::now()) {
+                tracing::warn!("persistencia de muestras falló: {err:#}");
+            }
+        }
+
         std::thread::sleep(interval);
     }
 }
