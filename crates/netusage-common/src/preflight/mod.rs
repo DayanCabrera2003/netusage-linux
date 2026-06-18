@@ -5,6 +5,7 @@
 //! Este modulo solo define los tipos comunes (estado, resultado e informe) y
 //! la agregacion del veredicto final.
 
+pub mod btf;
 pub mod cgroup;
 
 /// Estado de una comprobacion individual.
