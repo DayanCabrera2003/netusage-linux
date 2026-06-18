@@ -79,3 +79,51 @@ impl Report {
         out
     }
 }
+
+/// Ejecuta todas las comprobaciones de entorno en orden y agrega el informe.
+pub fn run_all() -> Report {
+    Report::new(vec![
+        cgroup::check(),
+        btf::check(),
+        kernel::check(),
+        caps::check(),
+    ])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn result(status: CheckStatus) -> CheckResult {
+        CheckResult::new("dummy", status, "")
+    }
+
+    #[test]
+    fn is_apt_true_with_only_ok_and_warn() {
+        let report = Report::new(vec![
+            result(CheckStatus::Ok),
+            result(CheckStatus::Warn),
+            result(CheckStatus::Ok),
+        ]);
+        assert!(report.is_apt());
+    }
+
+    #[test]
+    fn is_apt_false_with_any_fail() {
+        let report = Report::new(vec![
+            result(CheckStatus::Ok),
+            result(CheckStatus::Fail),
+            result(CheckStatus::Warn),
+        ]);
+        assert!(!report.is_apt());
+    }
+
+    #[test]
+    fn format_plain_lists_all_checks() {
+        let report = Report::new(vec![result(CheckStatus::Ok), result(CheckStatus::Fail)]);
+        let text = report.format_plain();
+        assert!(text.contains("[OK]"));
+        assert!(text.contains("[FAIL]"));
+        assert_eq!(text.lines().count(), 2);
+    }
+}
