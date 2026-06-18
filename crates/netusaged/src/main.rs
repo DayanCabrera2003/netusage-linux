@@ -7,6 +7,7 @@ mod cgroup;
 mod check;
 mod cli;
 mod loader;
+mod monitor;
 
 use clap::Parser;
 
