@@ -1,0 +1,17 @@
+[package]
+name = "netusaged"
+version = "0.1.0"
+edition = "2021"
+description = "Demonio privilegiado de netusage (carga eBPF, persistencia, diagnostico)"
+license = "MIT"
+
+[[bin]]
+name = "netusaged"
+path = "src/main.rs"
+
+[dependencies]
+netusage-common = { path = "../netusage-common" }
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
