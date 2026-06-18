@@ -8,6 +8,7 @@
 #![no_main]
 
 mod maps;
+mod packet;
 
 use aya_ebpf::{macros::cgroup_skb, programs::SkBuffContext};
 
