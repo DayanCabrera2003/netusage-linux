@@ -22,7 +22,10 @@ fn ebpf_object() -> &'static [u8] {
 /// Devuelve el handle `Ebpf`, que el llamador debe mantener vivo mientras quiera
 /// seguir contabilizando tráfico.
 pub fn load_and_attach<T: AsFd>(cgroup: T) -> Result<Ebpf> {
-    let mut bpf = Ebpf::load(ebpf_object()).context("cargando el objeto eBPF")?;
+    let mut bpf = Ebpf::load(ebpf_object()).context(
+        "cargando el objeto eBPF (¿faltan privilegios? se necesita root o \
+         CAP_BPF+CAP_PERFMON+CAP_NET_ADMIN; ver `netusaged --check`)",
+    )?;
 
     attach_program(
         &mut bpf,
