@@ -1,0 +1,8 @@
+[package]
+name = "netusage-common"
+version = "0.1.0"
+edition = "2021"
+description = "Tipos compartidos y comprobaciones de entorno (preflight) de netusage"
+license = "MIT"
+
+[dependencies]

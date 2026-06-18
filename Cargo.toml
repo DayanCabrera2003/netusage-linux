@@ -2,4 +2,6 @@
 # Por ahora no hay miembros; los crates se agregan en commits posteriores.
 [workspace]
 resolver = "2"
-members = []
+members = [
+    "crates/netusage-common",
+]
