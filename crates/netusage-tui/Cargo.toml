@@ -1,0 +1,12 @@
+[package]
+name = "netusage-tui"
+version = "0.1.0"
+edition = "2021"
+description = "Interfaz de terminal (TUI) de netusage"
+license = "MIT"
+
+[[bin]]
+name = "netusage-tui"
+path = "src/main.rs"
+
+[dependencies]

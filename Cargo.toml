@@ -4,4 +4,7 @@
 resolver = "2"
 members = [
     "crates/netusage-common",
+    "crates/netusage-store",
+    "crates/netusage-ipc",
+    "crates/netusage-tui",
 ]

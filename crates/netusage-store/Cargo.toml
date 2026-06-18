@@ -1,0 +1,8 @@
+[package]
+name = "netusage-store"
+version = "0.1.0"
+edition = "2021"
+description = "Capa de persistencia SQLite y queries de agregacion de netusage"
+license = "MIT"
+
+[dependencies]

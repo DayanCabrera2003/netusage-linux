@@ -1,0 +1,8 @@
+[package]
+name = "netusage-ipc"
+version = "0.1.0"
+edition = "2021"
+description = "Protocolo de comunicacion entre el demonio y la interfaz de netusage"
+license = "MIT"
+
+[dependencies]
