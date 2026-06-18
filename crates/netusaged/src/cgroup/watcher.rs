@@ -54,19 +54,21 @@ fn watch_mask() -> WatchMask {
 /// Arranca el vigilante en un hilo dedicado y devuelve el extremo receptor del
 /// canal de eventos junto al `JoinHandle` del hilo.
 ///
-/// Se vigila `base` (típicamente `app.slice`) y, de forma recursiva, los
+/// Se vigila cada `app.slice` de `bases` y, de forma recursiva, sus
 /// subdirectorios ya existentes, para captar la creación de scopes dentro de
 /// ellos. Los cgroups que ya existían NO se emiten como `Born`: de ese set
 /// inicial se encarga el descubrimiento estático del hilo principal. El
 /// vigilante solo reporta cambios a partir de su arranque.
-pub fn spawn_watcher(base: PathBuf) -> Result<(JoinHandle<()>, Receiver<CgroupEvent>)> {
+pub fn spawn_watcher(bases: Vec<PathBuf>) -> Result<(JoinHandle<()>, Receiver<CgroupEvent>)> {
     let mut inotify = Inotify::init().context("inicializando inotify")?;
 
     // Mapa de descriptor de watch -> ruta del directorio vigilado, para
     // reconstruir la ruta completa de cada evento (inotify da el nombre
     // relativo al directorio del watch).
     let mut wd_paths: HashMap<WatchDescriptor, PathBuf> = HashMap::new();
-    add_watches_recursive(&mut inotify, &base, &mut wd_paths)?;
+    for base in &bases {
+        add_watches_recursive(&mut inotify, base, &mut wd_paths)?;
+    }
 
     let (tx, rx) = mpsc::channel();
     let handle = thread::spawn(move || {

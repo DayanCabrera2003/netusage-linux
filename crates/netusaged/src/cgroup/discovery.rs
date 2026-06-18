@@ -4,25 +4,55 @@
 //! `app.slice` del usuario y enumerar los directorios de scope/servicio de app
 //! que cuelgan de ella. No resuelve identidad ni inode; solo rutas.
 //!
-//! Decisión de alcance (MVP de Fase 2): se atribuye el tráfico de las apps del
-//! usuario que ejecuta el demonio (su UID efectivo). Un demonio de sistema que
-//! cubriera a todos los usuarios tendría que iterar cada `user-<UID>.slice`;
-//! eso queda preparado en la forma de las funciones (la base es un parámetro)
-//! pero no se activa aquí. Ver documentacion/desviaciones/fase-2.md.
+//! Alcance: se enumeran las `app.slice` de todos los usuarios con sesión activa
+//! (`user-<UID>.slice`). Esto es necesario porque bajo `sudo` el UID efectivo
+//! del demonio es 0 (root) mientras que las apps viven en la slice del usuario
+//! real, y conviene de cara al demonio de sistema de la Fase 4. Ver
+//! documentacion/desviaciones/fase-2.md.
 
 use std::io;
 use std::path::{Path, PathBuf};
 
-/// Devuelve la ruta de `app.slice` del usuario `uid` bajo la raíz `root` de
-/// cgroup v2.
+/// Enumera las rutas `app.slice` de todos los usuarios con sesión activa bajo
+/// `root/user.slice`.
 ///
-/// La jerarquía de systemd para sesiones de usuario es:
-/// `root/user.slice/user-<UID>.slice/user@<UID>.service/app.slice`.
-pub fn app_slice_path(root: &Path, uid: u32) -> PathBuf {
-    root.join("user.slice")
-        .join(format!("user-{uid}.slice"))
-        .join(format!("user@{uid}.service"))
-        .join("app.slice")
+/// Se enumeran todos los `user-<UID>.slice` en vez de un solo UID por dos
+/// motivos: cuando el demonio se ejecuta con `sudo`, su UID efectivo es 0
+/// (root) y las apps del usuario viven en su propia `user-<UID>.slice`, no en la
+/// de root; y un demonio de sistema (Fase 4) debe cubrir a todos los usuarios.
+/// Solo se devuelven las `app.slice` que existen (usuarios con sesión gráfica).
+pub fn user_app_slices(root: &Path) -> io::Result<Vec<PathBuf>> {
+    let user_slice = root.join("user.slice");
+    let mut slices = Vec::new();
+    if !user_slice.is_dir() {
+        return Ok(slices);
+    }
+
+    for entry in std::fs::read_dir(&user_slice)? {
+        let entry = entry?;
+        if !entry.file_type()?.is_dir() {
+            continue;
+        }
+        let name = entry.file_name().to_string_lossy().into_owned();
+        let Some(uid) = parse_user_slice_uid(&name) else {
+            continue;
+        };
+        let app_slice = entry
+            .path()
+            .join(format!("user@{uid}.service"))
+            .join("app.slice");
+        if app_slice.is_dir() {
+            slices.push(app_slice);
+        }
+    }
+    Ok(slices)
+}
+
+/// Extrae el UID de un nombre `user-<UID>.slice`; `None` si no encaja.
+fn parse_user_slice_uid(name: &str) -> Option<u32> {
+    name.strip_prefix("user-")
+        .and_then(|rest| rest.strip_suffix(".slice"))
+        .and_then(|uid| uid.parse::<u32>().ok())
 }
 
 /// Enumera recursivamente los cgroups de aplicación bajo `base` (normalmente
@@ -76,15 +106,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn builds_app_slice_path_for_uid() {
-        let p = app_slice_path(Path::new("/sys/fs/cgroup"), 1000);
-        assert_eq!(
-            p,
-            Path::new("/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice")
-        );
-    }
-
-    #[test]
     fn missing_base_yields_empty_list() {
         let base = Path::new("/definitely/does/not/exist/app.slice");
         assert!(discover_app_cgroups(base).unwrap().is_empty());
@@ -110,5 +131,38 @@ mod tests {
         assert!(!got.iter().any(|p| p.ends_with("noise")));
 
         std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn parses_user_slice_uid() {
+        assert_eq!(parse_user_slice_uid("user-1000.slice"), Some(1000));
+        assert_eq!(parse_user_slice_uid("user-0.slice"), Some(0));
+        assert_eq!(parse_user_slice_uid("init.scope"), None);
+        assert_eq!(parse_user_slice_uid("user-abc.slice"), None);
+        assert_eq!(parse_user_slice_uid("user-.slice"), None);
+    }
+
+    #[test]
+    fn enumerates_existing_user_app_slices() {
+        // Raíz temporal que imita /sys/fs/cgroup con dos usuarios; solo uno
+        // tiene app.slice (sesión gráfica).
+        let root = std::env::temp_dir().join(format!("netusage-uas-{}", std::process::id()));
+        let with_session = root.join("user.slice/user-1000.slice/user@1000.service/app.slice");
+        std::fs::create_dir_all(&with_session).unwrap();
+        // Usuario sin app.slice: no debe aparecer.
+        std::fs::create_dir_all(root.join("user.slice/user-42.slice")).unwrap();
+        // Directorio que no es user-*.slice: se ignora.
+        std::fs::create_dir_all(root.join("user.slice/noise")).unwrap();
+
+        let got = user_app_slices(&root).unwrap();
+        assert_eq!(got, vec![with_session]);
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn missing_user_slice_yields_empty() {
+        let root = Path::new("/definitely/missing/cgroup-root");
+        assert!(user_app_slices(root).unwrap().is_empty());
     }
 }
