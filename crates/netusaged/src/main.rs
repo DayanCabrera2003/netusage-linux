@@ -8,20 +8,24 @@ mod attach;
 mod backfill;
 mod cgroup;
 mod check;
-mod counters;
 mod cli;
+mod counters;
 mod identity;
 mod loader;
 mod monitor;
 mod resolver;
+mod sampler;
 mod supervisor;
 
+use std::path::PathBuf;
 use std::time::Duration;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
+use netusage_store::Store;
 
 use crate::cli::{Cli, Command};
+use crate::sampler::Sampler;
 
 fn main() {
     tracing_subscriber::fmt()
@@ -38,7 +42,7 @@ fn main() {
     }
 
     let result = match cli.command {
-        Some(Command::Run { interval_secs }) => run(interval_secs),
+        Some(Command::Run { interval_secs, db }) => run(interval_secs, db),
         None => {
             println!(
                 "netusaged: sin acción. Usa --check para diagnosticar o `run` para monitorizar."
@@ -58,8 +62,21 @@ fn main() {
 /// El handle eBPF se transfiere al `supervisor`, que lo mantiene vivo durante
 /// toda la monitorización: al dropearse se desenganchan los programas y se
 /// liberan los mapas.
-fn run(interval_secs: u64) -> Result<()> {
+fn run(interval_secs: u64, db: Option<PathBuf>) -> Result<()> {
     let root = cgroup::cgroup_v2_root()?;
     let bpf = loader::load()?;
-    supervisor::run(bpf, &root, Duration::from_secs(interval_secs))
+
+    // Si se pasó `--db`, persistir además de mostrar en vivo.
+    let sampler = match db {
+        Some(path) => {
+            let store = Store::open(&path)
+                .with_context(|| format!("abriendo la base de datos {}", path.display()))?;
+            let config = store.load_config().context("cargando la configuración")?;
+            tracing::info!("persistiendo muestras en {}", path.display());
+            Some(Sampler::new(store, config))
+        }
+        None => None,
+    };
+
+    supervisor::run(bpf, &root, Duration::from_secs(interval_secs), sampler)
 }

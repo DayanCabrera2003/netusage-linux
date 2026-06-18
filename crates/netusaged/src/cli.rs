@@ -3,6 +3,8 @@
 //! Responsabilidad única: declarar los argumentos. El comportamiento vive en
 //! otros módulos.
 
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 /// Demonio de netusage: monitor de uso de datos por aplicación.
@@ -21,11 +23,16 @@ pub struct Cli {
 /// Subcomandos del demonio.
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// Engancha los programas eBPF al cgroup raíz y monitoriza en vivo el
-    /// tráfico total (rx/tx) de la máquina.
+    /// Engancha los programas eBPF al cgroup raíz y atribuye el tráfico por
+    /// aplicación en vivo. Con `--db`, además persiste las muestras.
     Run {
         /// Intervalo de muestreo en segundos.
         #[arg(long, default_value_t = 2)]
         interval_secs: u64,
+
+        /// Ruta de la base de datos SQLite donde persistir las muestras. Si se
+        /// omite, solo se muestra en vivo sin persistir.
+        #[arg(long)]
+        db: Option<PathBuf>,
     },
 }
