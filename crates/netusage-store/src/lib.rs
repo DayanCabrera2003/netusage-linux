@@ -7,11 +7,13 @@
 mod apps;
 mod config;
 mod error;
+mod period;
 mod samples;
 mod schema;
 mod store;
 
 pub use config::{StoreConfig, WeekStart};
 pub use error::{Result, StoreError};
+pub use period::{Period, PeriodBounds};
 pub use samples::SampleDelta;
 pub use store::Store;
