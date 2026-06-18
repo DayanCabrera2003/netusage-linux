@@ -1,14 +1,25 @@
-//! Localización del cgroup v2 unificado raíz.
+//! Subsistema de cgroups: del árbol de `/sys/fs/cgroup` a la identidad de cada
+//! aplicación.
 //!
-//! Responsabilidad única: devolver la ruta del cgroup v2 al que se enganchan
-//! los programas eBPF, validando que el sistema realmente usa cgroup v2.
+//! Responsabilidad única de este módulo (fachada): localizar el cgroup v2 raíz
+//! y reexportar las piezas del subsistema (descubrimiento, inode, identidad)
+//! para el resto del demonio. Cada pieza vive en su propio submódulo con una
+//! única responsabilidad:
+//!
+//! - `discovery`: enumera los cgroups de aplicación bajo `app.slice`.
+//! - `inode`: traduce la ruta de un cgroup al inode que el mapa eBPF usa como
+//!   clave.
+//! - `identity`: convierte el nombre de un scope de systemd en la identidad
+//!   legible de la app.
 
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Result};
 
+pub mod discovery;
+
 /// Punto de montaje estándar del cgroup v2 unificado.
-const CGROUP_V2_ROOT: &str = "/sys/fs/cgroup";
+pub const CGROUP_V2_ROOT: &str = "/sys/fs/cgroup";
 
 /// Devuelve la ruta del cgroup v2 raíz.
 ///
