@@ -16,7 +16,8 @@ clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-# statx/fstat para el inode del cgroup y getuid para la ruta de app.slice.
-rustix = { version = "1", features = ["fs", "process"] }
-# Vigilancia del arbol de cgroups (nacimiento/muerte de scopes de app).
-inotify = "0.11"
+# sock_diag (netlink) para obtener el cookie de los sockets ya abiertos al
+# arrancar (backfill de sockets preexistentes).
+netlink-sys = "0.8"
+netlink-packet-core = "0.7"
+netlink-packet-sock-diag = "0.4"
