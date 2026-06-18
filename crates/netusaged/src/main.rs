@@ -8,6 +8,7 @@ mod cgroup;
 mod check;
 mod cli;
 mod fallback;
+mod identity;
 mod loader;
 mod monitor;
 mod supervisor;
