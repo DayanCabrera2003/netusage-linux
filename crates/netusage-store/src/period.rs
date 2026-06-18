@@ -59,6 +59,17 @@ pub fn bounds(period: Period, cfg: &StoreConfig, now_utc: DateTime<Utc>) -> Resu
     })
 }
 
+/// Epoch UTC del inicio del día local que contiene al instante `ts` (epoch
+/// segundos UTC). Lo usa la retención para agrupar muestras por día local.
+pub(crate) fn day_start_epoch(cfg: &StoreConfig, ts: i64) -> Result<i64> {
+    let tz = cfg.tz()?;
+    let date = DateTime::from_timestamp(ts, 0)
+        .expect("epoch válido")
+        .with_timezone(&tz)
+        .date_naive();
+    Ok(local_start_of_day_epoch(&tz, date))
+}
+
 /// Fecha del inicio de la semana que contiene a `today`, según `week_start`.
 fn week_start_date(today: NaiveDate, cfg: &StoreConfig) -> NaiveDate {
     let from_monday = |d: chrono::Weekday| d.num_days_from_monday();

@@ -9,6 +9,7 @@ mod apps;
 mod config;
 mod error;
 mod period;
+mod retention;
 mod samples;
 mod schema;
 mod store;
