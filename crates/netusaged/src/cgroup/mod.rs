@@ -17,6 +17,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{bail, Result};
 
 pub mod discovery;
+pub mod inode;
 
 /// Punto de montaje estándar del cgroup v2 unificado.
 pub const CGROUP_V2_ROOT: &str = "/sys/fs/cgroup";

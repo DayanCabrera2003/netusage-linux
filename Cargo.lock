@@ -329,6 +329,7 @@ dependencies = [
  "aya",
  "clap",
  "netusage-common",
+ "rustix",
  "tracing",
  "tracing-subscriber",
 ]
