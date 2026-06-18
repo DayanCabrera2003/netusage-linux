@@ -154,3 +154,78 @@ pub fn unescape_systemd(name: &str) -> String {
     }
     String::from_utf8_lossy(&out).into_owned()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(name: &str) -> AppIdentity {
+        parse_scope(name)
+    }
+
+    #[test]
+    fn gnome_scope_resolves_to_app_name() {
+        let id = parse("app-gnome-firefox-2838.scope");
+        assert!(id.is_app);
+        assert_eq!(id.app_key, "firefox");
+        assert_eq!(id.display_name, "firefox");
+    }
+
+    #[test]
+    fn kde_reverse_domain_resolves_to_last_segment() {
+        let id = parse("app-org.kde.konsole-c1a2.scope");
+        assert!(id.is_app);
+        assert_eq!(id.app_key, "org.kde.konsole");
+        assert_eq!(id.display_name, "konsole");
+    }
+
+    #[test]
+    fn flatpak_scope_resolves_to_app_id() {
+        let id = parse("app-flatpak-org.mozilla.firefox-1234.scope");
+        assert!(id.is_app);
+        assert_eq!(id.app_key, "org.mozilla.firefox");
+        assert_eq!(id.display_name, "firefox");
+    }
+
+    #[test]
+    fn at_instance_suffix_is_trimmed() {
+        let id = parse("app-gnome-org.gnome.Nautilus@1.scope");
+        assert!(id.is_app);
+        assert_eq!(id.app_key, "org.gnome.Nautilus");
+        assert_eq!(id.display_name, "Nautilus");
+    }
+
+    #[test]
+    fn systemd_escapes_are_decoded_in_app_name() {
+        let id = parse("app-foo\\x2dbar-1.scope");
+        assert!(id.is_app);
+        assert_eq!(id.app_key, "foo-bar");
+        assert_eq!(id.display_name, "foo-bar");
+    }
+
+    #[test]
+    fn non_app_scopes_are_flagged() {
+        for name in ["session.scope", "init.scope", "dbus.service"] {
+            let id = parse(name);
+            assert!(!id.is_app, "{name} debería marcarse como no-app");
+        }
+    }
+
+    #[test]
+    fn empty_and_malformed_never_panic_and_are_non_app() {
+        for name in ["", ".scope", "app-.scope", "app-"] {
+            let id = parse(name);
+            assert!(!id.is_app, "{name:?} debería ser no-app");
+        }
+    }
+
+    #[test]
+    fn unescape_decodes_hex_sequences() {
+        assert_eq!(unescape_systemd("foo\\x2dbar"), "foo-bar");
+        assert_eq!(unescape_systemd("a\\x2db\\x2ec"), "a-b.c");
+        // Sin secuencias: la cadena se devuelve intacta.
+        assert_eq!(unescape_systemd("plain"), "plain");
+        // `\x2d` es `-` y `\x2e` es `.`, en paridad con `systemd-escape -u`.
+        assert_eq!(unescape_systemd("\\x2e"), ".");
+    }
+}
