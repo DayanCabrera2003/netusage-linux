@@ -8,6 +8,7 @@ mod attach;
 mod backfill;
 mod cgroup;
 mod check;
+mod counters;
 mod cli;
 mod identity;
 mod loader;
