@@ -8,6 +8,9 @@ license = "MIT"
 
 [dependencies]
 aya-ebpf = "0.1"
+# Contrato de claves del contador, compartido con el espacio de usuario.
+# Sin `std` para mantener el crate eBPF en `no_std`.
+netusage-common = { path = "../netusage-common", default-features = false }
 
 [[bin]]
 name = "netusage-ebpf"
