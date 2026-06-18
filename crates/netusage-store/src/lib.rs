@@ -5,5 +5,6 @@
 //! configuración, periodos, agregación, retención).
 
 mod error;
+mod schema;
 
 pub use error::{Result, StoreError};
