@@ -18,3 +18,5 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # statx/fstat para el inode del cgroup y getuid para la ruta de app.slice.
 rustix = { version = "1", features = ["fs", "process"] }
+# Vigilancia del arbol de cgroups (nacimiento/muerte de scopes de app).
+inotify = "0.11"

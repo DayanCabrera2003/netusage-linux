@@ -67,7 +67,7 @@ fn collect_app_dirs(dir: &Path, out: &mut Vec<PathBuf>) -> io::Result<()> {
 
 /// Indica si el nombre de un directorio de cgroup corresponde a un scope o
 /// servicio de aplicación.
-fn is_app_cgroup_name(name: &str) -> bool {
+pub fn is_app_cgroup_name(name: &str) -> bool {
     name.ends_with(".scope") || name.ends_with(".service")
 }
 

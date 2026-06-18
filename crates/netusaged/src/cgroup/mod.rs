@@ -20,6 +20,7 @@ pub mod discovery;
 pub mod identity;
 pub mod inode;
 pub mod registry;
+pub mod watcher;
 
 /// Punto de montaje estándar del cgroup v2 unificado.
 pub const CGROUP_V2_ROOT: &str = "/sys/fs/cgroup";
