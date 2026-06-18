@@ -29,11 +29,7 @@ impl DeltaTracker {
     /// absolutos actuales, y actualiza el último valor visto.
     pub fn delta(&mut self, app_key: &str, rx_abs: u64, tx_abs: u64) -> (u64, u64) {
         // Sin valor previo: línea base (prev = actual -> delta 0).
-        let (prev_rx, prev_tx) = self
-            .last
-            .get(app_key)
-            .copied()
-            .unwrap_or((rx_abs, tx_abs));
+        let (prev_rx, prev_tx) = self.last.get(app_key).copied().unwrap_or((rx_abs, tx_abs));
         let rx_delta = if rx_abs >= prev_rx {
             rx_abs - prev_rx
         } else {
@@ -71,7 +67,7 @@ mod tests {
     fn reset_is_treated_as_traffic_since_restart() {
         let mut t = DeltaTracker::new();
         assert_eq!(t.delta("a", 400, 0), (0, 0)); // base
-        // El absoluto baja (reinicio): el delta es el nuevo absoluto, no negativo.
+                                                  // El absoluto baja (reinicio): el delta es el nuevo absoluto, no negativo.
         assert_eq!(t.delta("a", 50, 0), (50, 0));
     }
 

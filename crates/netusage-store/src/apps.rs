@@ -38,7 +38,9 @@ mod tests {
     #[test]
     fn upsert_is_stable_and_keeps_first_seen() {
         let mut store = Store::open_in_memory().unwrap();
-        let id1 = store.upsert_app("/usr/lib/firefox/firefox", "firefox", 1000).unwrap();
+        let id1 = store
+            .upsert_app("/usr/lib/firefox/firefox", "firefox", 1000)
+            .unwrap();
         // Forzar el camino de BD en la segunda llamada vaciando la caché.
         store.app_cache.clear();
         let id2 = store
@@ -48,11 +50,9 @@ mod tests {
 
         let first_seen: i64 = store
             .conn
-            .query_row(
-                "SELECT first_seen FROM apps WHERE id = ?1",
-                [id1],
-                |r| r.get(0),
-            )
+            .query_row("SELECT first_seen FROM apps WHERE id = ?1", [id1], |r| {
+                r.get(0)
+            })
             .unwrap();
         assert_eq!(first_seen, 1000, "first_seen no debe cambiar en upserts");
     }
