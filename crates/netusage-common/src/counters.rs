@@ -19,28 +19,58 @@
 //! Es la misma decisión de la Fase 1 (ver desviaciones), llevada al modelo por
 //! cgroup.
 
-/// Clave de los mapas de contadores: el inode del directorio del cgroup.
+/// Clave de los mapas de contadores: el cgroup id (Fase 2 por cgroup, obsoleto).
 ///
-/// Este entero es a la vez el cgroup id devuelto por `bpf_skb_cgroup_id` en el
-/// kernel y el `st_ino` del directorio del cgroup en `/sys/fs/cgroup`. Esa
-/// equivalencia es la base de toda la atribución por aplicación: el kernel
-/// indexa por cgroup id y el espacio de usuario resuelve ese mismo número a una
-/// ruta de cgroup y, de ahí, a la identidad de la app.
+/// Se conserva mientras quede código que lo referencie; se elimina al retirar el
+/// enfoque por cgroup. La atribución por ejecutable usa `SocketCookie`.
 pub type CgroupInode = u64;
 
-/// Capacidad máxima de cada mapa de contadores por cgroup.
+/// Clave de los mapas de contadores: el socket cookie.
 ///
-/// Una máquina de escritorio típica tiene del orden de decenas de cgroups de
-/// aplicación vivos a la vez; 4096 entradas dejan margen amplio para picos y
-/// para cgroups que aparecen y desaparecen entre lecturas. Si en pruebas se
-/// observara agotamiento (inserciones fallidas en el kernel), subir este valor
-/// y documentarlo.
-pub const TRAFFIC_MAP_CAPACITY: u32 = 4096;
+/// Es el valor que devuelve el helper `bpf_get_socket_cookie`, único y estable
+/// por socket mientras el socket vive. Es la base de la atribución por
+/// aplicación: el kernel indexa los bytes por cookie y el espacio de usuario
+/// correlaciona cada cookie con el ejecutable del proceso que creó el socket.
+pub type SocketCookie = u64;
 
-/// Nombre del mapa eBPF que acumula los bytes recibidos (ingress) por cgroup.
+/// Registro que el kernel publica en el ringbuf al crearse un socket.
+///
+/// Lleva el `cookie` del socket recién creado y el `pid` del proceso que lo
+/// creó (en cuyo contexto corre el programa `cgroup/sock_create`). El espacio de
+/// usuario resuelve `pid -> /proc/<pid>/exe -> app` y cachea `cookie -> app`.
+///
+/// `#[repr(C)]` con padding explícito: se escribe/lee como bytes crudos del
+/// ringbuf, así que el layout debe ser estable y sin huecos sin inicializar.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct SockBirth {
+    pub cookie: u64,
+    pub pid: u32,
+    pub _pad: u32,
+}
+
+/// Capacidad máxima de cada mapa de contadores por socket.
+///
+/// Una máquina de escritorio puede tener miles de sockets vivos (un navegador
+/// abre cientos). 16384 entradas dejan margen amplio; al ser mapas LRU, si se
+/// llenaran el kernel desaloja los cookies menos usados (sockets muertos) en vez
+/// de fallar.
+pub const TRAFFIC_MAP_CAPACITY: u32 = 16384;
+
+/// Tamaño en bytes del ringbuf de nacimientos de socket (potencia de 2).
+///
+/// 256 KiB absorben ráfagas de creación de sockets (p. ej. al abrir un
+/// navegador) sin que el espacio de usuario, que drena en un hilo dedicado,
+/// pierda eventos.
+pub const SOCK_BIRTH_RING_BYTES: u32 = 256 * 1024;
+
+/// Nombre del mapa eBPF que acumula los bytes recibidos (ingress) por socket.
 ///
 /// El espacio de usuario abre el mapa por este nombre exacto.
 pub const RX_MAP_NAME: &str = "RX_BYTES";
 
-/// Nombre del mapa eBPF que acumula los bytes enviados (egress) por cgroup.
+/// Nombre del mapa eBPF que acumula los bytes enviados (egress) por socket.
 pub const TX_MAP_NAME: &str = "TX_BYTES";
+
+/// Nombre del ringbuf de nacimientos de socket.
+pub const SOCK_BIRTH_MAP_NAME: &str = "SOCK_BIRTH";
