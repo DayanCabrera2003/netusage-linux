@@ -3,6 +3,7 @@
 //! Responsabilidad única: inicializar el logging, parsear la CLI y despachar
 //! al subcomando correspondiente. La lógica de cada acción vive en su módulo.
 
+mod aggregator;
 mod attach;
 mod cgroup;
 mod check;
