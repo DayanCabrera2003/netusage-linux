@@ -1,14 +1,13 @@
-//! Carga del objeto eBPF y enganche al cgroup.
+//! Carga del objeto eBPF en el kernel.
 //!
-//! Responsabilidad única: gestionar el ciclo de vida de los programas eBPF
-//! (cargar el objeto, engancharlo a ingress y egress del cgroup). Mientras el
-//! `Ebpf` devuelto siga vivo, los programas permanecen enganchados; al
-//! dropearlo, se desenganchan automáticamente.
-
-use std::os::fd::AsFd;
+//! Responsabilidad única: embeber el objeto eBPF compilado y cargarlo,
+//! devolviendo el handle `Ebpf`. El enganche de los programas a cada cgroup de
+//! aplicación lo gestiona el módulo `attach` (carga de programas) y el
+//! `supervisor` (enganche/desenganche por cgroup). Mientras el `Ebpf` devuelto
+//! siga vivo, los programas y mapas permanecen en el kernel; al dropearlo se
+//! liberan.
 
 use anyhow::{Context, Result};
-use aya::programs::{CgroupAttachMode, CgroupSkb, CgroupSkbAttachType};
 use aya::Ebpf;
 
 /// Objeto eBPF compilado y embebido en tiempo de compilación. La ruta la fija
@@ -17,55 +16,13 @@ fn ebpf_object() -> &'static [u8] {
     aya::include_bytes_aligned!(env!("NETUSAGE_EBPF_OBJ"))
 }
 
-/// Carga el objeto eBPF y engancha los programas ingress y egress al `cgroup`.
+/// Carga el objeto eBPF y devuelve el handle.
 ///
-/// Devuelve el handle `Ebpf`, que el llamador debe mantener vivo mientras quiera
-/// seguir contabilizando tráfico.
-pub fn load_and_attach<T: AsFd>(cgroup: T) -> Result<Ebpf> {
-    let mut bpf = Ebpf::load(ebpf_object()).context(
+/// No engancha ningún programa: eso corresponde a `attach::load_programs` (una
+/// vez) y `attach::attach_cgroup` (por cada cgroup de app).
+pub fn load() -> Result<Ebpf> {
+    Ebpf::load(ebpf_object()).context(
         "cargando el objeto eBPF (¿faltan privilegios? se necesita root o \
          CAP_BPF+CAP_PERFMON+CAP_NET_ADMIN; ver `netusaged --check`)",
-    )?;
-
-    attach_program(
-        &mut bpf,
-        "netusage_ingress",
-        cgroup.as_fd(),
-        CgroupSkbAttachType::Ingress,
-    )?;
-    attach_program(
-        &mut bpf,
-        "netusage_egress",
-        cgroup.as_fd(),
-        CgroupSkbAttachType::Egress,
-    )?;
-
-    Ok(bpf)
-}
-
-/// Carga y engancha un único programa `cgroup_skb` por su nombre.
-fn attach_program(
-    bpf: &mut Ebpf,
-    name: &str,
-    cgroup: impl AsFd,
-    attach_type: CgroupSkbAttachType,
-) -> Result<()> {
-    let program: &mut CgroupSkb = bpf
-        .program_mut(name)
-        .with_context(|| format!("programa eBPF '{name}' no encontrado en el objeto"))?
-        .try_into()
-        .with_context(|| format!("'{name}' no es un programa cgroup_skb"))?;
-
-    program.load().with_context(|| {
-        format!(
-            "cargando '{name}' en el kernel (¿faltan privilegios? se necesita root o \
-                 CAP_BPF+CAP_PERFMON+CAP_NET_ADMIN; ver `netusaged --check`)"
-        )
-    })?;
-
-    program
-        .attach(cgroup, attach_type, CgroupAttachMode::Single)
-        .with_context(|| format!("enganchando '{name}' al cgroup"))?;
-
-    Ok(())
+    )
 }

@@ -80,9 +80,7 @@ mod tests {
         let p = app_slice_path(Path::new("/sys/fs/cgroup"), 1000);
         assert_eq!(
             p,
-            Path::new(
-                "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice"
-            )
+            Path::new("/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice")
         );
     }
 

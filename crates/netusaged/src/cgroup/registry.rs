@@ -18,8 +18,8 @@
 //! El tipo de los links es un parámetro genérico `L` para poder probar la
 //! estructura de datos sin cargar eBPF (en producción `L = AttachedLinks`).
 
-use std::collections::HashMap;
 use std::collections::hash_map::Values;
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 use netusage_common::counters::CgroupInode;
@@ -91,6 +91,10 @@ impl<L> CgroupRegistry<L> {
     }
 
     /// Indica si el registro está vacío.
+    ///
+    /// Complementa a `len` (clippy `len_without_is_empty`) y se usa en los
+    /// tests; de ahí el `allow` para el build no-test.
+    #[allow(dead_code)]
     pub fn is_empty(&self) -> bool {
         self.by_inode.is_empty()
     }

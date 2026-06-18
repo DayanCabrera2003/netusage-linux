@@ -10,10 +10,11 @@ mod cli;
 mod fallback;
 mod loader;
 mod monitor;
+mod supervisor;
 
 use std::time::Duration;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Parser;
 
 use crate::cli::{Cli, Command};
@@ -48,19 +49,13 @@ fn main() {
     }
 }
 
-/// Engancha los programas eBPF al cgroup raíz y monitoriza el tráfico total.
+/// Carga el objeto eBPF y arranca la atribución de tráfico por aplicación.
+///
+/// El handle eBPF se transfiere al `supervisor`, que lo mantiene vivo durante
+/// toda la monitorización: al dropearse se desenganchan los programas y se
+/// liberan los mapas.
 fn run(interval_secs: u64) -> Result<()> {
-    let cgroup_path = cgroup::cgroup_v2_root()?;
-    let cgroup = std::fs::File::open(&cgroup_path)
-        .with_context(|| format!("abriendo el cgroup {}", cgroup_path.display()))?;
-
-    // El handle eBPF debe vivir durante toda la monitorización: al dropearse se
-    // desenganchan los programas.
-    let bpf = loader::load_and_attach(&cgroup)?;
-    tracing::info!(
-        "monitorizando el tráfico total en {} (Ctrl-C para salir)",
-        cgroup_path.display()
-    );
-
-    monitor::run_monitor(&bpf, Duration::from_secs(interval_secs))
+    let root = cgroup::cgroup_v2_root()?;
+    let bpf = loader::load()?;
+    supervisor::run(bpf, &root, Duration::from_secs(interval_secs))
 }

@@ -72,13 +72,20 @@ where
     }
 
     let mut out: Vec<AppUsage> = by_key.into_values().collect();
-    out.sort_by(|a, b| {
+    sort_by_total(&mut out);
+    out
+}
+
+/// Ordena la lista por bytes totales (rx + tx) de forma descendente; ante
+/// empate, alfabéticamente por nombre visible. Se expone para poder reordenar
+/// tras fusionar los contadores de cgroups ya muertos.
+pub fn sort_by_total(usages: &mut [AppUsage]) {
+    usages.sort_by(|a, b| {
         let total = |u: &AppUsage| u.rx as u128 + u.tx as u128;
         total(b)
             .cmp(&total(a))
             .then_with(|| a.display_name.cmp(&b.display_name))
     });
-    out
 }
 
 #[cfg(test)]
@@ -101,8 +108,8 @@ mod tests {
         let samples = vec![
             sample(10, 100, 10),
             sample(20, 50, 5),
-            sample(30, 7, 3),  // desconocido -> Sistema / Otros
-            sample(40, 1, 1),  // desconocido -> Sistema / Otros
+            sample(30, 7, 3), // desconocido -> Sistema / Otros
+            sample(40, 1, 1), // desconocido -> Sistema / Otros
         ];
 
         let agg = aggregate(samples, resolve);
