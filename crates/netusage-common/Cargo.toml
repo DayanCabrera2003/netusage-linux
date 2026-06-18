@@ -5,6 +5,13 @@ edition = "2021"
 description = "Tipos compartidos y comprobaciones de entorno (preflight) de netusage"
 license = "MIT"
 
+# El feature `std` (activo por defecto) habilita el módulo `preflight` y sus
+# dependencias. El crate eBPF depende de este crate con `default-features =
+# false` para mantenerse `no_std` y usar solo el contrato de `counters`.
+[features]
+default = ["std"]
+std = ["dep:rustix", "dep:caps"]
+
 [dependencies]
-rustix = { version = "1", features = ["fs", "system", "process"] }
-caps = "0.5"
+rustix = { version = "1", features = ["fs", "system", "process"], optional = true }
+caps = { version = "0.5", optional = true }
