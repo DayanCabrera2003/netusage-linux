@@ -1,0 +1,23 @@
+[Unit]
+Description=NetUsage per-application network accounting daemon
+Documentation=https://github.com/DayanCabrera2003/netusage-linux
+After=network.target
+# Requiere cgroup v2 unificado; el demonio aborta con mensaje claro si no lo encuentra.
+
+[Service]
+Type=simple
+# Persiste en /var/lib/netusage y expone el socket IPC de solo lectura.
+ExecStart=/usr/bin/netusaged run --db /var/lib/netusage/netusage.db
+Restart=on-failure
+RestartSec=2s
+User=netusaged
+Group=netusaged
+# Estado persistente: crea y posee /var/lib/netusage (la base SQLite).
+StateDirectory=netusage
+StateDirectoryMode=0755
+# Directorio del socket en /run/netusage.
+RuntimeDirectory=netusage
+RuntimeDirectoryMode=0755
+
+[Install]
+WantedBy=multi-user.target
