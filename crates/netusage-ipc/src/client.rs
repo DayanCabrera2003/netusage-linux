@@ -12,6 +12,7 @@ use crate::error::IpcError;
 use crate::protocol::{Request, Response, PROTOCOL_VERSION};
 
 /// Conexión a un demonio `netusaged` por su socket Unix.
+#[derive(Debug)]
 pub struct Client {
     stream: UnixStream,
 }
