@@ -38,6 +38,14 @@ pub fn classify_magic(f_type: u64) -> CheckResult {
     }
 }
 
+/// Indica si `/sys/fs/cgroup` esta montado como cgroup v2 unificado
+/// (deteccion booleana directa para el informe de entorno).
+pub fn is_v2() -> bool {
+    rustix::fs::statfs(CGROUP_MOUNT)
+        .map(|stat| stat.f_type as u64 == CGROUP2_SUPER_MAGIC)
+        .unwrap_or(false)
+}
+
 /// Ejecuta el comprobador contra el sistema real.
 pub fn check() -> CheckResult {
     match rustix::fs::statfs(CGROUP_MOUNT) {

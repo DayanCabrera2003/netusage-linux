@@ -52,10 +52,26 @@ pub fn classify(major: u32, minor: u32) -> CheckResult {
     }
 }
 
+/// Cadena `release` del kernel en ejecucion (p. ej. `6.8.0-31-generic`).
+pub fn release_string() -> String {
+    rustix::system::uname()
+        .release()
+        .to_string_lossy()
+        .into_owned()
+}
+
+/// Indica si el kernel en ejecucion soporta las capabilities BPF (>= 5.8),
+/// requisito para la atribucion por aplicacion sin ejecutarse como root y para
+/// el mapa `RingBuf` que usa la deteccion de nacimiento de sockets.
+pub fn supports_bpf_caps() -> bool {
+    parse_release(&release_string())
+        .map(|(major, minor)| (major, minor) >= (5, 8))
+        .unwrap_or(false)
+}
+
 /// Ejecuta el comprobador contra el sistema real.
 pub fn check() -> CheckResult {
-    let uname = rustix::system::uname();
-    let release = uname.release().to_string_lossy();
+    let release = release_string();
     match parse_release(&release) {
         Some((major, minor)) => classify(major, minor),
         None => CheckResult::new(

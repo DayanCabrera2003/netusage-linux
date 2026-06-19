@@ -42,7 +42,7 @@ fn main() {
     let cli = Cli::parse();
 
     if cli.check {
-        std::process::exit(check::run());
+        std::process::exit(check::run(cli.json));
     }
 
     let result = match cli.command {

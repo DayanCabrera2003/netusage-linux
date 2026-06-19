@@ -16,6 +16,11 @@ pub struct Cli {
     #[arg(long)]
     pub check: bool,
 
+    /// Junto con `--check`, emite el informe de entorno en formato JSON de una
+    /// línea (para consumo programático en lugar del informe legible).
+    #[arg(long)]
+    pub json: bool,
+
     #[command(subcommand)]
     pub command: Option<Command>,
 }
