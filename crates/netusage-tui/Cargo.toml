@@ -10,3 +10,13 @@ name = "netusage-tui"
 path = "src/main.rs"
 
 [dependencies]
+# TUI. Se usa la 0.29 (crossterm integrado, API estable) en vez de la 0.30
+# modularizada; ver desviaciones.
+ratatui = "0.29"
+# Capa de datos: lectura de la base en modo solo lectura (camino primario de la
+# Fase 4), sin privilegios.
+netusage-store = { path = "../netusage-store" }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"
+thiserror = "2"
