@@ -4,6 +4,7 @@
 //! con el `TestBackend` de ratatui sin terminal real.
 
 mod app_list;
+mod footer;
 mod period_bar;
 mod summary;
 
@@ -19,12 +20,14 @@ pub fn draw(frame: &mut Frame, state: &AppState) {
         Constraint::Length(3), // selector de periodo
         Constraint::Length(3), // resumen del periodo
         Constraint::Min(1),    // lista de apps
+        Constraint::Length(1), // ayuda
     ])
     .split(area);
 
     period_bar::render(frame, chunks[0], state);
     summary::render(frame, chunks[1], state);
     app_list::render(frame, chunks[2], state);
+    footer::render(frame, chunks[3]);
 }
 
 #[cfg(test)]
