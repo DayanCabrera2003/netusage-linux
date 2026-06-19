@@ -655,6 +655,7 @@ dependencies = [
  "netlink-packet-sock-diag",
  "netlink-sys",
  "netusage-common",
+ "netusage-ipc",
  "netusage-store",
  "rustix",
  "tracing",

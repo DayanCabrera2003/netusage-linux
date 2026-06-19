@@ -11,6 +11,7 @@ mod check;
 mod cli;
 mod counters;
 mod identity;
+mod ipc_server;
 mod loader;
 mod monitor;
 mod privileges;
@@ -73,13 +74,23 @@ fn run(interval_secs: u64, db: Option<PathBuf>) -> Result<()> {
     let root = cgroup::cgroup_v2_root()?;
     let bpf = loader::load()?;
 
-    // Si se pasó `--db`, persistir además de mostrar en vivo.
+    // Si se pasó `--db`, persistir además de mostrar en vivo, y exponer el
+    // socket IPC de solo lectura.
     let sampler = match db {
         Some(path) => {
             let store = Store::open(&path)
                 .with_context(|| format!("abriendo la base de datos {}", path.display()))?;
             let config = store.load_config().context("cargando la configuración")?;
             tracing::info!("persistiendo muestras en {}", path.display());
+
+            // El socket IPC es opcional: si su directorio no existe (p. ej. sin
+            // la unit systemd), se avisa y el demonio sigue.
+            let socket = std::path::Path::new(netusage_ipc::protocol::DEFAULT_SOCKET_PATH);
+            match ipc_server::spawn(path.clone(), socket) {
+                Ok(()) => tracing::info!("servidor IPC escuchando en {}", socket.display()),
+                Err(err) => tracing::warn!("servidor IPC no disponible: {err:#}"),
+            }
+
             Some(Sampler::new(store, config))
         }
         None => None,

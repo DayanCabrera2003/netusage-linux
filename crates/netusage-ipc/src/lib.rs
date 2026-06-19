@@ -8,9 +8,8 @@ pub mod client;
 pub mod codec;
 pub mod error;
 pub mod protocol;
+pub mod server;
 
 pub use client::Client;
 pub use error::IpcError;
-pub use protocol::{
-    AppUsage, Period, Request, Response, DEFAULT_SOCKET_PATH, PROTOCOL_VERSION,
-};
+pub use protocol::{AppUsage, Period, Request, Response, DEFAULT_SOCKET_PATH, PROTOCOL_VERSION};
