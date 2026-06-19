@@ -19,5 +19,43 @@ StateDirectoryMode=0755
 RuntimeDirectory=netusage
 RuntimeDirectoryMode=0755
 
+# --- Modelo de privilegios: capabilities, no root pleno (kernel >= 5.8) ---
+AmbientCapabilities=CAP_BPF CAP_PERFMON CAP_NET_ADMIN
+CapabilityBoundingSet=CAP_BPF CAP_PERFMON CAP_NET_ADMIN
+NoNewPrivileges=true
+
+# --- Hardening del sandbox (compatible con eBPF cgroup_skb) ---
+ProtectSystem=strict
+ProtectHome=true
+# Se permite escribir solo el estado; StateDirectory ya lo expone read-write.
+ReadWritePaths=/var/lib/netusage
+PrivateTmp=true
+# ProtectControlGroups debe quedar en false: el demonio engancha los programas
+# eBPF al cgroup v2 raiz (Fase 2). No se restringe.
+ProtectControlGroups=false
+# IMPORTANTE: NO se restringe /proc. La atribucion por aplicacion lee
+# /proc/<pid>/exe de otros procesos para resolver el ejecutable dueno de cada
+# socket (Fase 2); ProtectProc=invisible o ProcSubset=pid romperian la
+# atribucion, por eso se dejan en sus valores por defecto permisivos.
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectClock=true
+ProtectHostname=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+# El verificador eBPF y el JIT requieren paginas ejecutables; por eso
+# MemoryDenyWriteExecute se deja en false.
+MemoryDenyWriteExecute=false
+# AF_UNIX para el socket IPC; AF_NETLINK para la carga de eBPF y sock_diag.
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+# bpf() no esta en @system-service (esta en @privileged) y el grupo @bpf no
+# existe en este systemd (258), por eso se permiten bpf y perf_event_open de
+# forma explicita; sin ellos el verificador eBPF no podria cargar el programa.
+SystemCallFilter=@system-service bpf perf_event_open
+SystemCallErrorNumber=EPERM
+
 [Install]
 WantedBy=multi-user.target
