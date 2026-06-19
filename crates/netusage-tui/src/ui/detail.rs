@@ -1,12 +1,14 @@
 //! Widget de detalle por aplicación: panel emergente con rx/tx/total.
 
 use ratatui::layout::{Constraint, Flex, Layout, Rect};
-use ratatui::text::{Line, Text};
-use ratatui::widgets::{Block, Borders, Clear, Paragraph};
+use ratatui::style::{Modifier, Style};
+use ratatui::text::{Line, Span, Text};
+use ratatui::widgets::{Clear, Paragraph};
 use ratatui::Frame;
 
 use crate::format::format_bytes;
 use crate::state::AppState;
+use crate::ui::theme;
 
 /// Dibuja el panel de detalle de la app seleccionada, si la hay.
 pub fn render(frame: &mut Frame, area: Rect, state: &AppState) {
@@ -16,19 +18,32 @@ pub fn render(frame: &mut Frame, area: Rect, state: &AppState) {
 
     let popup = centered(area, 50, 9);
     let text = Text::from(vec![
-        Line::from(app.display_name.clone()),
+        Line::from(Span::styled(
+            app.display_name.clone(),
+            Style::default()
+                .fg(theme::ACCENT)
+                .add_modifier(Modifier::BOLD),
+        )),
         Line::from(""),
-        Line::from(format!("rx     {}", format_bytes(app.rx_bytes))),
-        Line::from(format!("tx     {}", format_bytes(app.tx_bytes))),
-        Line::from(format!("total  {}", format_bytes(app.total()))),
+        Line::from(vec![
+            Span::raw("↓ rx     "),
+            Span::styled(format_bytes(app.rx_bytes), Style::default().fg(theme::RX)),
+        ]),
+        Line::from(vec![
+            Span::raw("↑ tx     "),
+            Span::styled(format_bytes(app.tx_bytes), Style::default().fg(theme::TX)),
+        ]),
+        Line::from(vec![
+            Span::raw("Σ total  "),
+            Span::styled(
+                format_bytes(app.total()),
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
+        ]),
         Line::from(""),
-        Line::from(app.app_key.clone()),
+        Line::from(Span::styled(app.app_key.clone(), theme::dim())),
     ]);
-    let panel = Paragraph::new(text).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .title(" Detalle (Esc cierra) "),
-    );
+    let panel = Paragraph::new(text).block(theme::panel(" Detalle (Esc cierra) "));
 
     frame.render_widget(Clear, popup); // limpia lo que haya detrás
     frame.render_widget(panel, popup);

@@ -8,11 +8,12 @@ mod detail;
 mod footer;
 mod period_bar;
 mod summary;
+mod theme;
 
 use ratatui::layout::{Alignment, Constraint, Layout, Rect};
 use ratatui::style::{Modifier, Style};
-use ratatui::text::{Line, Text};
-use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
+use ratatui::text::{Line, Span, Text};
+use ratatui::widgets::{Paragraph, Wrap};
 use ratatui::Frame;
 
 use crate::state::{AppState, ConnState};
@@ -49,17 +50,25 @@ pub fn draw(frame: &mut Frame, state: &AppState) {
 /// Panel central cuando el demonio o la base no están disponibles.
 fn draw_disconnected(frame: &mut Frame, area: Rect, reason: &str) {
     let text = Text::from(vec![
-        Line::from("Demonio no disponible"),
+        Line::from(Span::styled(
+            "Demonio no disponible",
+            Style::default().fg(theme::TX).add_modifier(Modifier::BOLD),
+        )),
         Line::from(""),
-        Line::from(reason.to_string()),
+        Line::from(Span::styled(reason.to_string(), theme::dim())),
         Line::from(""),
-        Line::from("Pulsa 'r' para reintentar, 'q' para salir."),
+        Line::from(vec![
+            Span::raw("Pulsa "),
+            Span::styled("r", Style::default().fg(theme::ACCENT)),
+            Span::raw(" para reintentar, "),
+            Span::styled("q", Style::default().fg(theme::ACCENT)),
+            Span::raw(" para salir."),
+        ]),
     ]);
     let panel = Paragraph::new(text)
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true })
-        .style(Style::default().add_modifier(Modifier::BOLD))
-        .block(Block::default().borders(Borders::ALL).title(" netusage "));
+        .block(theme::panel(" netusage "));
     frame.render_widget(panel, area);
 }
 
