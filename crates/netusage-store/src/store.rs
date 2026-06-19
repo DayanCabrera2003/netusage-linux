@@ -21,8 +21,15 @@ pub struct Store {
 
 impl Store {
     /// Abre (o crea) la base de datos en `path`.
+    ///
+    /// Tras abrirla, fija el modo del fichero a `0644`: legible por todos
+    /// (la interfaz sin privilegios la abre en solo lectura) y escribible solo
+    /// por el dueño (el demonio). El ajuste es best-effort: si el proceso no es
+    /// el dueño del fichero, se ignora.
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Store> {
-        Self::init(Connection::open(path)?)
+        let store = Self::init(Connection::open(&path)?)?;
+        set_world_readable(path.as_ref());
+        Ok(store)
     }
 
     /// Abre la base de datos en `path` en modo **solo lectura**.
@@ -63,6 +70,12 @@ impl Store {
             app_cache: HashMap::new(),
         })
     }
+}
+
+/// Fija el modo del fichero de base de datos a `0644` (best-effort).
+fn set_world_readable(path: &Path) {
+    use std::os::unix::fs::PermissionsExt;
+    let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o644));
 }
 
 #[cfg(test)]
