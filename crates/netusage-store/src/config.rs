@@ -92,6 +92,17 @@ impl Store {
         Ok(config)
     }
 
+    /// Indica si ya hay una configuración guardada (para distinguir el primer
+    /// arranque, donde conviene autodetectar la zona horaria).
+    pub fn config_exists(&self) -> Result<bool> {
+        let count: i64 = self.conn.query_row(
+            "SELECT count(*) FROM config WHERE key = ?1",
+            [CONFIG_KEY],
+            |row| row.get(0),
+        )?;
+        Ok(count > 0)
+    }
+
     /// Guarda la configuración (sustituye la anterior).
     pub fn save_config(&self, config: &StoreConfig) -> Result<()> {
         config.tz()?; // no permitir persistir una zona horaria inválida
