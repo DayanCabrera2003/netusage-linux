@@ -11,6 +11,7 @@ mod check;
 mod cli;
 mod configure;
 mod counters;
+mod degraded;
 mod identity;
 mod ipc_server;
 mod loader;
