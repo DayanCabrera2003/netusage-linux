@@ -12,6 +12,7 @@
 // final (commit de cableado) los usa todos y entonces se retira este allow.
 #![allow(dead_code)]
 
+mod cli;
 mod data;
 mod error;
 mod event;
