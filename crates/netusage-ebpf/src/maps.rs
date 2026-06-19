@@ -18,7 +18,7 @@ use aya_ebpf::{
     maps::{LruHashMap, RingBuf},
 };
 use netusage_common::counters::{
-    SockBirth, SocketCookie, SOCK_BIRTH_RING_BYTES, TRAFFIC_MAP_CAPACITY,
+    SockBirth, SocketCookie, SOCK_BIRTH_RING_BYTES, SOCK_DEATH_RING_BYTES, TRAFFIC_MAP_CAPACITY,
 };
 
 /// Bandera de `insert`: 0 equivale a `BPF_ANY` (crear o sobrescribir).
@@ -39,6 +39,17 @@ pub fn emit_sock_birth(cookie: SocketCookie, pid: u32) {
         _pad: 0,
     };
     let _ = SOCK_BIRTH.output(&birth, 0);
+}
+
+/// Ringbuf por el que el kernel notifica el cierre de un socket (solo el
+/// cookie), para que el espacio de usuario finalice sus contadores y libere su
+/// entrada del mapa con exactitud.
+#[map(name = "SOCK_DEATH")]
+static SOCK_DEATH: RingBuf = RingBuf::with_byte_size(SOCK_DEATH_RING_BYTES, 0);
+
+/// Publica el cookie de un socket que se cierra.
+pub fn emit_sock_death(cookie: SocketCookie) {
+    let _ = SOCK_DEATH.output(&cookie, 0);
 }
 
 /// Bytes recibidos (ingress) acumulados por socket cookie.

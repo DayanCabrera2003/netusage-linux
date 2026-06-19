@@ -99,9 +99,28 @@ impl Aggregator {
     }
 }
 
+impl Aggregator {
+    /// Olvida el último valor de un cookie (su socket se cerró y ya se contó su
+    /// delta final). Evita que un cookie muerto deje rastro en `prev`.
+    pub fn forget(&mut self, cookie: SocketCookie) {
+        self.prev.remove(&cookie);
+    }
+}
+
 impl Default for Aggregator {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// Elimina un cookie de ambos mapas de contadores (tras finalizar sus bytes).
+pub fn remove_cookie(bpf: &mut Ebpf, cookie: SocketCookie) {
+    for name in [RX_MAP_NAME, TX_MAP_NAME] {
+        if let Some(map) = bpf.map_mut(name) {
+            if let Ok(mut map) = BpfHashMap::<&mut MapData, SocketCookie, u64>::try_from(map) {
+                let _ = map.remove(&cookie);
+            }
+        }
     }
 }
 

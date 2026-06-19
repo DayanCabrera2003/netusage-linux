@@ -68,3 +68,10 @@ pub const TX_MAP_NAME: &str = "TX_BYTES";
 
 /// Nombre del ringbuf de nacimientos de socket.
 pub const SOCK_BIRTH_MAP_NAME: &str = "SOCK_BIRTH";
+
+/// Tamaño en bytes del ringbuf de muertes de socket (potencia de 2).
+pub const SOCK_DEATH_RING_BYTES: u32 = 256 * 1024;
+
+/// Nombre del ringbuf de muertes de socket. Cada evento es un `u64` con el
+/// cookie del socket que se cierra, para finalizar sus contadores con exactitud.
+pub const SOCK_DEATH_MAP_NAME: &str = "SOCK_DEATH";
