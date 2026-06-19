@@ -1,6 +1,18 @@
 //! Interfaz de terminal (TUI) de netusage.
 //!
-//! Esqueleto en la Fase 0; se implementa en la Fase 5.
+//! Muestra el consumo de red total y por aplicación, con conmutador de periodo
+//! (hoy / semana / mes / mes anterior), leyendo la base del demonio en modo
+//! solo lectura.
+//!
+//! Arquitectura por capas: datos (`data`) y modelo (`model`) sin dependencias
+//! de ratatui; estado y reductor (`state`, `update`); widgets de render puros
+//! (`ui`); y la orquestación del bucle (`app`, `event`).
+
+// Durante la construcción incremental hay módulos aún no cableados; el `app`
+// final (commit de cableado) los usa todos y entonces se retira este allow.
+#![allow(dead_code)]
+
+mod error;
 
 fn main() {
     println!("netusage-tui (placeholder)");
