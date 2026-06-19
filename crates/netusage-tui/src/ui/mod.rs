@@ -4,6 +4,7 @@
 //! con el `TestBackend` de ratatui sin terminal real.
 
 mod app_list;
+mod detail;
 mod footer;
 mod period_bar;
 mod summary;
@@ -38,6 +39,11 @@ pub fn draw(frame: &mut Frame, state: &AppState) {
     summary::render(frame, chunks[1], state);
     app_list::render(frame, chunks[2], state);
     footer::render(frame, chunks[3]);
+
+    // El detalle se superpone al resto cuando está abierto.
+    if state.show_detail {
+        detail::render(frame, area, state);
+    }
 }
 
 /// Panel central cuando el demonio o la base no están disponibles.
