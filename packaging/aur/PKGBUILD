@@ -1,0 +1,38 @@
+# Maintainer: Dayan Cabrera <dcabrera@evercreate.co>
+#
+# PKGBUILD para Arch Linux / derivadas (AUR). Compila desde el codigo fuente.
+# El crate eBPF se compila a traves del build.rs de netusaged, que usa una
+# toolchain nightly propia (de ahi `rustup` en makedepends en vez de `rust`).
+# Arch ejecuta automaticamente systemd-sysusers y systemd-tmpfiles via sus
+# hooks de pacman al instalar ficheros en /usr/lib/{sysusers,tmpfiles}.d.
+pkgname=netusage
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Monitor de uso de red por aplicacion para Linux (eBPF), al estilo Android"
+arch=('x86_64')
+url="https://github.com/DayanCabrera2003/netusage-linux"
+license=('MIT')
+depends=('glibc')
+makedepends=('rustup' 'clang' 'llvm' 'bpf-linker' 'git')
+source=("git+https://github.com/DayanCabrera2003/netusage-linux.git#tag=v$pkgver")
+sha256sums=('SKIP')
+
+build() {
+    cd "$srcdir/netusage-linux"
+    # El build.rs de netusaged compila el objeto eBPF (toolchain nightly) y lo
+    # embebe; luego se enlaza el espacio de usuario.
+    cargo build --release --locked -p netusaged -p netusage-tui
+}
+
+package() {
+    cd "$srcdir/netusage-linux"
+    install -Dm755 target/release/netusaged "$pkgdir/usr/bin/netusaged"
+    install -Dm755 target/release/netusage-tui "$pkgdir/usr/bin/netusage-tui"
+    install -Dm644 packaging/systemd/netusaged.service \
+        "$pkgdir/usr/lib/systemd/system/netusaged.service"
+    install -Dm644 packaging/systemd/sysusers.d/netusaged.conf \
+        "$pkgdir/usr/lib/sysusers.d/netusaged.conf"
+    install -Dm644 packaging/systemd/tmpfiles.d/netusaged.conf \
+        "$pkgdir/usr/lib/tmpfiles.d/netusaged.conf"
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE" 2>/dev/null || true
+}

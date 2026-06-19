@@ -1,0 +1,50 @@
+name: CI
+
+# Integracion continua del espacio de usuario: formato, lint y tests del
+# workspace. Compilar netusaged dispara su build.rs, que compila el crate eBPF
+# (nightly + rust-src + bpf-linker, target bpfel-unknown-none), por eso se
+# instala esa toolchain ademas de la estable.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar toolchains (estable + nightly para eBPF)
+        run: |
+          rustup toolchain install stable --component rustfmt clippy
+          rustup toolchain install nightly --component rust-src
+
+      - name: Instalar dependencias de compilacion eBPF
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm clang
+          cargo install bpf-linker --locked
+
+      - name: Cache de cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Formato
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Tests
+        run: cargo test --workspace

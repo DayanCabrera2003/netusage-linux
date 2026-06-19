@@ -12,3 +12,12 @@ members = [
 # El crate eBPF se compila aparte (target bpfel-unknown-none, nightly,
 # build-std), por eso se excluye del workspace normal.
 exclude = ["crates/netusage-ebpf"]
+
+# Perfil de release para los binarios distribuibles: LTO y una sola unidad de
+# codegen para un binario mas pequeno y rapido, y `strip` para quitar simbolos
+# de depuracion del artefacto de empaquetado. Se mantiene el nivel de
+# optimizacion por defecto (3) por ser un proceso que muestrea en caliente.
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

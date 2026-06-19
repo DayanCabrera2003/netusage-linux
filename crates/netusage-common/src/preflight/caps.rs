@@ -25,6 +25,27 @@ impl Privileges {
     fn has_full_caps(&self) -> bool {
         self.has_bpf && self.has_perfmon && self.has_net_admin
     }
+
+    /// El proceso puede cargar y enganchar eBPF: por ser root o por tener el
+    /// conjunto completo de capabilities.
+    pub fn is_sufficient(&self) -> bool {
+        self.is_root || self.has_full_caps()
+    }
+}
+
+/// Observa los privilegios reales del proceso en ejecucion.
+pub fn observe() -> Privileges {
+    use caps::{CapSet, Capability};
+
+    let is_root = rustix::process::geteuid().is_root();
+    let has = |cap| caps::has_cap(None, CapSet::Effective, cap).unwrap_or(false);
+
+    Privileges {
+        is_root,
+        has_bpf: has(Capability::CAP_BPF),
+        has_perfmon: has(Capability::CAP_PERFMON),
+        has_net_admin: has(Capability::CAP_NET_ADMIN),
+    }
 }
 
 /// Clasifica los privilegios observados.
@@ -54,17 +75,7 @@ pub fn classify(p: Privileges) -> CheckResult {
 
 /// Ejecuta el comprobador contra el proceso real.
 pub fn check() -> CheckResult {
-    use caps::{CapSet, Capability};
-
-    let is_root = rustix::process::geteuid().is_root();
-    let has = |cap| caps::has_cap(None, CapSet::Effective, cap).unwrap_or(false);
-
-    classify(Privileges {
-        is_root,
-        has_bpf: has(Capability::CAP_BPF),
-        has_perfmon: has(Capability::CAP_PERFMON),
-        has_net_admin: has(Capability::CAP_NET_ADMIN),
-    })
+    classify(observe())
 }
 
 #[cfg(test)]

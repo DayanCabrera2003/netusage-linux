@@ -16,6 +16,17 @@ pub struct Cli {
     #[arg(long)]
     pub check: bool,
 
+    /// Junto con `--check`, emite el informe de entorno en formato JSON de una
+    /// línea (para consumo programático en lugar del informe legible).
+    #[arg(long)]
+    pub json: bool,
+
+    /// Autoprueba de carga: carga el objeto eBPF y engancha los programas al
+    /// cgroup raíz, luego libera. Verifica que el entorno soporta la
+    /// monitorización (requiere privilegios). Devuelve 0 si carga y engancha.
+    #[arg(long)]
+    pub selftest_load: bool,
+
     #[command(subcommand)]
     pub command: Option<Command>,
 }

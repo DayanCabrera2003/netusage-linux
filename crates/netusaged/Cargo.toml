@@ -27,3 +27,42 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 netlink-sys = "0.8"
 netlink-packet-core = "0.7"
 netlink-packet-sock-diag = "0.4"
+
+# --- Empaquetado .deb (cargo-deb) ---
+# Las rutas de origen son relativas al directorio de este manifiesto. El binario
+# de la TUI y los ficheros de systemd viven fuera del crate, de ahi los `../../`.
+# Construir con: `cargo build --release -p netusaged -p netusage-tui` y luego
+# `cargo deb --no-build -p netusaged`.
+[package.metadata.deb]
+maintainer = "Dayan Cabrera <dcabrera@evercreate.co>"
+copyright = "2026, Dayan Cabrera"
+section = "net"
+priority = "optional"
+extended-description = "Monitor de uso de red por aplicacion para Linux, al estilo Android, basado en eBPF (cgroup_skb). Incluye el demonio privilegiado (netusaged) y la interfaz de terminal (netusage-tui)."
+assets = [
+    ["target/release/netusaged", "usr/bin/", "755"],
+    ["target/release/netusage-tui", "usr/bin/", "755"],
+    ["../../packaging/systemd/netusaged.service", "usr/lib/systemd/system/", "644"],
+    ["../../packaging/systemd/sysusers.d/netusaged.conf", "usr/lib/sysusers.d/", "644"],
+    ["../../packaging/systemd/tmpfiles.d/netusaged.conf", "usr/lib/tmpfiles.d/", "644"],
+]
+maintainer-scripts = "../../packaging/deb/"
+# cargo-deb registra el activado de la unit; sysusers y tmpfiles se procesan en
+# el postinst.
+systemd-units = { unit-name = "netusaged", enable = false, start = false }
+
+# --- Empaquetado .rpm (cargo-generate-rpm) ---
+# Las rutas de origen son relativas al directorio de este manifiesto. Construir
+# con `cargo build --release -p netusaged -p netusage-tui` y luego
+# `cargo generate-rpm -p crates/netusaged`.
+[package.metadata.generate-rpm]
+summary = "Monitor de uso de red por aplicacion (eBPF) para Linux"
+assets = [
+    { source = "../../target/release/netusaged", dest = "/usr/bin/netusaged", mode = "755" },
+    { source = "../../target/release/netusage-tui", dest = "/usr/bin/netusage-tui", mode = "755" },
+    { source = "../../packaging/systemd/netusaged.service", dest = "/usr/lib/systemd/system/netusaged.service", mode = "644" },
+    { source = "../../packaging/systemd/sysusers.d/netusaged.conf", dest = "/usr/lib/sysusers.d/netusaged.conf", mode = "644" },
+    { source = "../../packaging/systemd/tmpfiles.d/netusaged.conf", dest = "/usr/lib/tmpfiles.d/netusaged.conf", mode = "644" },
+]
+# Crea el usuario de sistema y los directorios tras instalar.
+post_install_script = "systemd-sysusers /usr/lib/sysusers.d/netusaged.conf >/dev/null 2>&1 || true\nsystemd-tmpfiles --create /usr/lib/tmpfiles.d/netusaged.conf >/dev/null 2>&1 || true"

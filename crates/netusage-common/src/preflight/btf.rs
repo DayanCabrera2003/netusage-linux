@@ -35,6 +35,11 @@ pub fn classify_path(path: &Path) -> CheckResult {
     }
 }
 
+/// Indica si el BTF del kernel esta presente (deteccion booleana directa).
+pub fn present() -> bool {
+    Path::new(BTF_PATH).is_file()
+}
+
 /// Ejecuta el comprobador contra el sistema real.
 pub fn check() -> CheckResult {
     classify_path(Path::new(BTF_PATH))

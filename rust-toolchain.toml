@@ -6,3 +6,7 @@
 [toolchain]
 channel = "stable"
 components = ["rustfmt", "clippy"]
+# Target musl para producir un binario estatico portable entre distribuciones
+# (sin dependencia de la glibc del sistema). El binario glibc nativo sigue
+# siendo el por defecto; musl es la via de empaquetado universal.
+targets = ["x86_64-unknown-linux-musl"]

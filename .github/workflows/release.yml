@@ -1,0 +1,62 @@
+name: Release
+
+# Construye los artefactos distribuibles al publicar un tag `v*`:
+# - binarios estaticos (musl) de netusaged y netusage-tui,
+# - paquete .deb (cargo-deb),
+# - paquete .rpm (cargo-generate-rpm),
+# y los adjunta al release de GitHub.
+#
+# El binario eBPF embebido es independiente de la libc del host (se compila al
+# target bpfel-unknown-none); musl solo afecta al enlace del espacio de usuario.
+
+on:
+  push:
+    tags: ["v*"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-package:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar toolchains y target musl
+        run: |
+          rustup toolchain install stable
+          rustup toolchain install nightly --component rust-src
+          rustup target add x86_64-unknown-linux-musl
+
+      - name: Instalar dependencias de empaquetado y eBPF
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm clang musl-tools
+          cargo install bpf-linker --locked
+          cargo install cargo-deb --locked
+          cargo install cargo-generate-rpm --locked
+
+      - name: Compilar binarios estaticos (musl)
+        run: |
+          cargo build --release --target x86_64-unknown-linux-musl \
+            -p netusaged -p netusage-tui
+
+      - name: Compilar binarios glibc (para empaquetado deb/rpm)
+        run: cargo build --release -p netusaged -p netusage-tui
+
+      - name: Construir paquete .deb
+        run: cargo deb --no-build -p netusaged
+
+      - name: Construir paquete .rpm
+        run: cargo generate-rpm -p crates/netusaged
+
+      - name: Adjuntar artefactos al release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/x86_64-unknown-linux-musl/release/netusaged
+            target/x86_64-unknown-linux-musl/release/netusage-tui
+            target/debian/*.deb
+            target/generate-rpm/*.rpm

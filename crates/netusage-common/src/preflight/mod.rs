@@ -8,7 +8,10 @@
 pub mod btf;
 pub mod caps;
 pub mod cgroup;
+pub mod env;
 pub mod kernel;
+
+pub use env::EnvReport;
 
 /// Estado de una comprobacion individual.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

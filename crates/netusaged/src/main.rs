@@ -11,6 +11,7 @@ mod check;
 mod cli;
 mod configure;
 mod counters;
+mod degraded;
 mod identity;
 mod ipc_server;
 mod loader;
@@ -19,6 +20,7 @@ mod privileges;
 mod report;
 mod resolver;
 mod sampler;
+mod selftest;
 mod supervisor;
 
 use std::path::PathBuf;
@@ -42,7 +44,11 @@ fn main() {
     let cli = Cli::parse();
 
     if cli.check {
-        std::process::exit(check::run());
+        std::process::exit(check::run(cli.json));
+    }
+
+    if cli.selftest_load {
+        std::process::exit(selftest::run());
     }
 
     let result = match cli.command {
@@ -97,6 +103,22 @@ fn run(interval_secs: u64, db: Option<PathBuf>) -> Result<()> {
     // Verificar el privilegio mínimo y reportarlo antes de tocar eBPF.
     let mode = privileges::ensure_minimum()?;
     tracing::info!("netusaged corriendo con {}", mode.describe());
+
+    // Evaluar el entorno y decidir el modo de ejecución antes de cargar eBPF,
+    // para fallar con un mensaje claro en vez de un panic en el loader.
+    let env = netusage_common::preflight::EnvReport::gather();
+    let decision = degraded::decide(&env);
+    match decision.mode {
+        degraded::RunMode::Disabled => {
+            anyhow::bail!("entorno no apto para netusaged: {}", decision.reason);
+        }
+        degraded::RunMode::NoPerApp => {
+            tracing::warn!("modo degradado: {}", decision.reason);
+        }
+        degraded::RunMode::Full => {
+            tracing::info!("{}", decision.reason);
+        }
+    }
 
     let root = cgroup::cgroup_v2_root()?;
     let bpf = loader::load()?;

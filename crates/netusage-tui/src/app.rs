@@ -23,6 +23,9 @@ use crate::update::{update, Message};
 pub fn run(cli: Cli) -> Result<()> {
     let data = DataSource::new(cli.db);
     let mut state = AppState::new(cli.period.to_period());
+    // Aviso de modo degradado: se calcula una vez al arrancar (el entorno no
+    // cambia durante la sesion).
+    state.degraded_note = crate::health::degraded_note();
     let refresh = Duration::from_secs(cli.refresh_secs.max(1));
 
     let mut terminal = ratatui::init();

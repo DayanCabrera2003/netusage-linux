@@ -1,0 +1,18 @@
+#!/bin/sh
+# Postinstalacion del paquete .deb de netusage.
+#
+# Crea el usuario de sistema y los directorios de estado/runtime aplicando los
+# ficheros sysusers.d y tmpfiles.d que instala el paquete. cargo-deb anade a
+# continuacion su propio fragmento para registrar la unit systemd.
+set -e
+
+if [ "$1" = "configure" ]; then
+    # Crear el usuario/grupo de sistema 'netusaged'.
+    if command -v systemd-sysusers >/dev/null 2>&1; then
+        systemd-sysusers /usr/lib/sysusers.d/netusaged.conf >/dev/null 2>&1 || true
+    fi
+    # Crear /var/lib/netusage y /run/netusage con sus permisos.
+    if command -v systemd-tmpfiles >/dev/null 2>&1; then
+        systemd-tmpfiles --create /usr/lib/tmpfiles.d/netusaged.conf >/dev/null 2>&1 || true
+    fi
+fi
