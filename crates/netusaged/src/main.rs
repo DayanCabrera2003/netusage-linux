@@ -99,6 +99,22 @@ fn run(interval_secs: u64, db: Option<PathBuf>) -> Result<()> {
     let mode = privileges::ensure_minimum()?;
     tracing::info!("netusaged corriendo con {}", mode.describe());
 
+    // Evaluar el entorno y decidir el modo de ejecución antes de cargar eBPF,
+    // para fallar con un mensaje claro en vez de un panic en el loader.
+    let env = netusage_common::preflight::EnvReport::gather();
+    let decision = degraded::decide(&env);
+    match decision.mode {
+        degraded::RunMode::Disabled => {
+            anyhow::bail!("entorno no apto para netusaged: {}", decision.reason);
+        }
+        degraded::RunMode::NoPerApp => {
+            tracing::warn!("modo degradado: {}", decision.reason);
+        }
+        degraded::RunMode::Full => {
+            tracing::info!("{}", decision.reason);
+        }
+    }
+
     let root = cgroup::cgroup_v2_root()?;
     let bpf = loader::load()?;
 
