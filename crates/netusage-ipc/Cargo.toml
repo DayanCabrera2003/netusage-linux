@@ -6,3 +6,7 @@ description = "Protocolo de comunicacion entre el demonio y la interfaz de netus
 license = "MIT"
 
 [dependencies]
+# Serialización del protocolo. postcard tiene formato de wire estable desde 1.0.
+serde = { version = "1", features = ["derive"] }
+postcard = { version = "1", features = ["use-std"] }
+thiserror = "2"
