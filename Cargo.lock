@@ -648,6 +648,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "aya",
+ "caps",
  "chrono",
  "clap",
  "netlink-packet-core",
@@ -655,6 +656,7 @@ dependencies = [
  "netlink-sys",
  "netusage-common",
  "netusage-store",
+ "rustix",
  "tracing",
  "tracing-subscriber",
 ]

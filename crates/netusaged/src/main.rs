@@ -13,6 +13,7 @@ mod counters;
 mod identity;
 mod loader;
 mod monitor;
+mod privileges;
 mod report;
 mod resolver;
 mod sampler;
