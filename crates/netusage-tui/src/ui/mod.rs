@@ -28,23 +28,43 @@ pub fn draw(frame: &mut Frame, state: &AppState) {
         return;
     }
 
+    // Reservar una fila superior para el aviso de modo degradado solo si lo hay.
+    let banner_height = if state.degraded_note.is_some() { 1 } else { 0 };
     let chunks = Layout::vertical([
-        Constraint::Length(3), // selector de periodo
-        Constraint::Length(3), // resumen del periodo
-        Constraint::Min(1),    // lista de apps
-        Constraint::Length(1), // ayuda
+        Constraint::Length(banner_height), // aviso de modo degradado (opcional)
+        Constraint::Length(3),             // selector de periodo
+        Constraint::Length(3),             // resumen del periodo
+        Constraint::Min(1),                // lista de apps
+        Constraint::Length(1),             // ayuda
     ])
     .split(area);
 
-    period_bar::render(frame, chunks[0], state);
-    summary::render(frame, chunks[1], state);
-    app_list::render(frame, chunks[2], state);
-    footer::render(frame, chunks[3]);
+    if let Some(note) = &state.degraded_note {
+        draw_degraded_banner(frame, chunks[0], note);
+    }
+    period_bar::render(frame, chunks[1], state);
+    summary::render(frame, chunks[2], state);
+    app_list::render(frame, chunks[3], state);
+    footer::render(frame, chunks[4]);
 
     // El detalle se superpone al resto cuando está abierto.
     if state.show_detail {
         detail::render(frame, area, state);
     }
+}
+
+/// Barra superior de una linea con el aviso de modo degradado, en colores de
+/// advertencia para que destaque sin robar espacio al contenido.
+fn draw_degraded_banner(frame: &mut Frame, area: Rect, note: &str) {
+    let banner = Paragraph::new(Line::from(Span::styled(
+        format!(" {note} "),
+        Style::default()
+            .fg(ratatui::style::Color::Black)
+            .bg(theme::WARN)
+            .add_modifier(Modifier::BOLD),
+    )))
+    .alignment(Alignment::Center);
+    frame.render_widget(banner, area);
 }
 
 /// Panel central cuando el demonio o la base no están disponibles.
@@ -102,6 +122,23 @@ mod tests {
     use super::{draw, render_to_lines};
     use crate::period::Period;
     use crate::state::{AppState, ConnState};
+
+    #[test]
+    fn degraded_note_shows_top_banner() {
+        let mut state = AppState::new(Period::Today);
+        state.connection = ConnState::Ready;
+        state.degraded_note = Some("Modo degradado: solo total".into());
+        let text = render_to_lines(60, 14, |f| draw(f, &state)).join("\n");
+        assert!(text.contains("Modo degradado: solo total"), "{text}");
+    }
+
+    #[test]
+    fn no_degraded_note_hides_banner() {
+        let mut state = AppState::new(Period::Today);
+        state.connection = ConnState::Ready;
+        let text = render_to_lines(60, 14, |f| draw(f, &state)).join("\n");
+        assert!(!text.contains("Modo degradado"), "{text}");
+    }
 
     #[test]
     fn disconnected_shows_panel_with_retry_hint() {

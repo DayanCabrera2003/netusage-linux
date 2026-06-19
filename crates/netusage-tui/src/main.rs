@@ -14,6 +14,7 @@ mod data;
 mod error;
 mod event;
 mod format;
+mod health;
 mod model;
 mod period;
 mod sort;

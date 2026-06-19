@@ -25,6 +25,8 @@ pub struct AppState {
     pub connection: ConnState,
     pub should_quit: bool,
     pub show_detail: bool,
+    /// Aviso de modo degradado del entorno, si lo hay (barra superior).
+    pub degraded_note: Option<String>,
 }
 
 impl AppState {
@@ -37,6 +39,7 @@ impl AppState {
             connection: ConnState::Loading,
             should_quit: false,
             show_detail: false,
+            degraded_note: None,
         }
     }
 

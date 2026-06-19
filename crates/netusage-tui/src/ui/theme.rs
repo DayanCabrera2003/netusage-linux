@@ -15,6 +15,8 @@ pub const RX: Color = Color::Green;
 pub const TX: Color = Color::Yellow;
 /// Bordes y texto secundario.
 pub const DIM: Color = Color::DarkGray;
+/// Fondo de avisos (barra de modo degradado).
+pub const WARN: Color = Color::Yellow;
 /// Fondo del resaltado (pestaña activa, fila seleccionada).
 pub const HIGHLIGHT_BG: Color = Color::Blue;
 

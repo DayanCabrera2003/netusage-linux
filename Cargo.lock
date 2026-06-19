@@ -803,6 +803,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "clap",
+ "netusage-common",
  "netusage-store",
  "ratatui",
  "thiserror 2.0.18",
