@@ -19,6 +19,7 @@ mod model;
 mod period;
 mod sort;
 mod state;
+mod ui;
 mod update;
 
 fn main() {
