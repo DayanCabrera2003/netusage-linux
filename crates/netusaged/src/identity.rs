@@ -10,6 +10,7 @@
 //!   (estilo escritorio) cuando existe; si no, el nombre del binario.
 
 use std::collections::HashMap;
+use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 use std::sync::OnceLock;
 
@@ -23,10 +24,17 @@ pub struct AppIdentity {
 /// Resuelve el PID a la identidad de su app.
 ///
 /// Devuelve `None` si el proceso ya no existe o es un hilo de kernel (PID 0).
+///
+/// La `app_key` se prefija con el UID dueño del proceso (`uid:<UID>:<…>`) para
+/// separar el consumo por usuario: en un equipo monousuario es invisible (todo
+/// es el mismo UID), y en multiusuario el mismo binario de dos usuarios queda en
+/// filas distintas. El `display_name` no lleva el UID.
 pub fn resolve_pid(pid: u32) -> Option<AppIdentity> {
     if pid == 0 {
         return None;
     }
+    // UID dueño del proceso (= dueño del socket).
+    let uid = std::fs::metadata(format!("/proc/{pid}")).ok()?.uid();
     let exe = std::fs::read_link(format!("/proc/{pid}/exe")).ok()?;
     let exe_base = basename(&exe.to_string_lossy());
 
@@ -47,7 +55,13 @@ pub fn resolve_pid(pid: u32) -> Option<AppIdentity> {
     if let Some(name) = friendly_from_index(desktop_index(), &identity.display_name) {
         identity.display_name = name;
     }
+    identity.app_key = namespace_by_uid(uid, &identity.app_key);
     Some(identity)
+}
+
+/// Prefija la clave de app con el UID para separar el consumo por usuario.
+fn namespace_by_uid(uid: u32, app_key: &str) -> String {
+    format!("uid:{uid}:{app_key}")
 }
 
 /// Construye la identidad a partir de la ruta del ejecutable (lógica pura).
@@ -289,5 +303,13 @@ mod tests {
     #[test]
     fn pid_zero_unresolved() {
         assert!(resolve_pid(0).is_none());
+    }
+
+    #[test]
+    fn namespaces_app_key_by_uid() {
+        assert_eq!(
+            namespace_by_uid(1000, "/usr/lib/firefox/firefox"),
+            "uid:1000:/usr/lib/firefox/firefox"
+        );
     }
 }
