@@ -13,6 +13,7 @@
 #![allow(dead_code)]
 
 mod error;
+mod format;
 
 fn main() {
     println!("netusage-tui (placeholder)");
