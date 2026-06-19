@@ -9,6 +9,7 @@ mod backfill;
 mod cgroup;
 mod check;
 mod cli;
+mod configure;
 mod counters;
 mod identity;
 mod ipc_server;
@@ -47,6 +48,7 @@ fn main() {
     let result = match cli.command {
         Some(Command::Run { interval_secs, db }) => run(interval_secs, db),
         Some(Command::Report { period, db }) => report::run(period, &db),
+        Some(Command::Config { action }) => config_command(action),
         None => {
             println!(
                 "netusaged: sin acción. Usa --check para diagnosticar o `run` para monitorizar."
@@ -58,6 +60,31 @@ fn main() {
     if let Err(err) = result {
         eprintln!("error: {err:#}");
         std::process::exit(1);
+    }
+}
+
+/// Despacha el subcomando `config`.
+fn config_command(action: crate::cli::ConfigAction) -> Result<()> {
+    use crate::cli::ConfigAction;
+    match action {
+        ConfigAction::Show { db } => configure::show(&db),
+        ConfigAction::Set {
+            db,
+            timezone,
+            cycle_start_day,
+            week_start,
+            sample_interval_secs,
+            fine_retention_days,
+            daily_retention_days,
+        } => configure::set(
+            &db,
+            timezone,
+            cycle_start_day,
+            week_start,
+            sample_interval_secs,
+            fine_retention_days,
+            daily_retention_days,
+        ),
     }
 }
 
@@ -80,6 +107,8 @@ fn run(interval_secs: u64, db: Option<PathBuf>) -> Result<()> {
         Some(path) => {
             let store = Store::open(&path)
                 .with_context(|| format!("abriendo la base de datos {}", path.display()))?;
+            // Primer arranque: fijar la zona horaria del sistema (en vez de UTC).
+            configure::ensure_first_run_config(&store)?;
             let config = store.load_config().context("cargando la configuración")?;
             tracing::info!("persistiendo muestras en {}", path.display());
 

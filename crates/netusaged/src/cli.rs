@@ -46,6 +46,52 @@ pub enum Command {
         #[arg(long)]
         db: PathBuf,
     },
+
+    /// Muestra o cambia la configuración (zona horaria, ciclo de facturación…).
+    Config {
+        #[command(subcommand)]
+        action: ConfigAction,
+    },
+}
+
+/// Acción del subcomando `config`.
+#[derive(Debug, Subcommand)]
+pub enum ConfigAction {
+    /// Imprime la configuración actual.
+    Show {
+        #[arg(long)]
+        db: PathBuf,
+    },
+    /// Cambia uno o más parámetros (solo los indicados).
+    Set {
+        #[arg(long)]
+        db: PathBuf,
+        /// Zona horaria IANA (p. ej. Europe/Madrid).
+        #[arg(long)]
+        timezone: Option<String>,
+        /// Día del mes (1..=28) de inicio del ciclo de facturación.
+        #[arg(long)]
+        cycle_start_day: Option<u8>,
+        /// Día de inicio de la semana.
+        #[arg(long, value_enum)]
+        week_start: Option<WeekStartArg>,
+        /// Intervalo de muestreo en segundos.
+        #[arg(long)]
+        sample_interval_secs: Option<u64>,
+        /// Días de retención de las muestras finas.
+        #[arg(long)]
+        fine_retention_days: Option<u32>,
+        /// Días de retención de los agregados diarios.
+        #[arg(long)]
+        daily_retention_days: Option<u32>,
+    },
+}
+
+/// Inicio de semana por CLI.
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum WeekStartArg {
+    Monday,
+    Sunday,
 }
 
 /// Periodos consultables por el subcomando `report`.
