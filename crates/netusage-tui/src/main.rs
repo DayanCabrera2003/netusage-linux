@@ -14,7 +14,9 @@
 
 mod error;
 mod format;
+mod model;
 mod period;
+mod sort;
 
 fn main() {
     println!("netusage-tui (placeholder)");
