@@ -4,12 +4,19 @@
 use ratatui::layout::Rect;
 use ratatui::style::{Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, List, ListItem, ListState};
+use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph};
 use ratatui::Frame;
 
 use crate::format::format_bytes;
 use crate::model::AppUsage;
 use crate::state::AppState;
+
+/// Bloque con borde y título de la lista.
+fn list_block() -> Block<'static> {
+    Block::default()
+        .borders(Borders::ALL)
+        .title(" Aplicaciones ")
+}
 
 /// Ancho fijo de la barra de proporción, en caracteres.
 const BAR_WIDTH: usize = 16;
@@ -23,15 +30,19 @@ pub fn render(frame: &mut Frame, area: Rect, state: &AppState) {
         .as_ref()
         .map(|s| s.apps.as_slice())
         .unwrap_or(&[]);
+
+    // Periodo sin datos: mensaje claro en vez de una lista vacía muda.
+    if apps.is_empty() {
+        let msg = Paragraph::new("Sin datos para este periodo").block(list_block());
+        frame.render_widget(msg, area);
+        return;
+    }
+
     let max = apps.iter().map(|a| a.total()).max().unwrap_or(0).max(1);
 
     let items: Vec<ListItem> = apps.iter().map(|app| row(app, max)).collect();
     let list = List::new(items)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" Aplicaciones "),
-        )
+        .block(list_block())
         .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
         .highlight_symbol("> ");
 
@@ -104,6 +115,16 @@ mod tests {
         let small = lines.iter().find(|l| l.contains("small")).unwrap();
         let bars = |l: &str| l.chars().filter(|c| *c == '#').count();
         assert!(bars(big) > bars(small), "big={big:?} small={small:?}");
+    }
+
+    #[test]
+    fn empty_period_shows_message() {
+        let state = state_with(vec![], 0);
+        let text = render_to_lines(60, 5, |f| super::render(f, f.area(), &state)).join("\n");
+        assert!(
+            text.contains("Sin datos para este periodo"),
+            "debe mostrar el mensaje de vacío: {text}"
+        );
     }
 
     #[test]

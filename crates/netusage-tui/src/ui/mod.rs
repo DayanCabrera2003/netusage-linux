@@ -8,14 +8,24 @@ mod footer;
 mod period_bar;
 mod summary;
 
-use ratatui::layout::{Constraint, Layout};
+use ratatui::layout::{Alignment, Constraint, Layout, Rect};
+use ratatui::style::{Modifier, Style};
+use ratatui::text::{Line, Text};
+use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 use ratatui::Frame;
 
-use crate::state::AppState;
+use crate::state::{AppState, ConnState};
 
 /// Dibuja la interfaz completa para el estado dado.
 pub fn draw(frame: &mut Frame, state: &AppState) {
     let area = frame.area();
+
+    // Estado de borde: demonio/base no disponibles.
+    if let ConnState::Disconnected(reason) = &state.connection {
+        draw_disconnected(frame, area, reason);
+        return;
+    }
+
     let chunks = Layout::vertical([
         Constraint::Length(3), // selector de periodo
         Constraint::Length(3), // resumen del periodo
@@ -28,6 +38,40 @@ pub fn draw(frame: &mut Frame, state: &AppState) {
     summary::render(frame, chunks[1], state);
     app_list::render(frame, chunks[2], state);
     footer::render(frame, chunks[3]);
+}
+
+/// Panel central cuando el demonio o la base no están disponibles.
+fn draw_disconnected(frame: &mut Frame, area: Rect, reason: &str) {
+    let text = Text::from(vec![
+        Line::from("Demonio no disponible"),
+        Line::from(""),
+        Line::from(reason.to_string()),
+        Line::from(""),
+        Line::from("Pulsa 'r' para reintentar, 'q' para salir."),
+    ]);
+    let panel = Paragraph::new(text)
+        .alignment(Alignment::Center)
+        .wrap(Wrap { trim: true })
+        .style(Style::default().add_modifier(Modifier::BOLD))
+        .block(Block::default().borders(Borders::ALL).title(" netusage "));
+    frame.render_widget(panel, area);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{draw, render_to_lines};
+    use crate::period::Period;
+    use crate::state::{AppState, ConnState};
+
+    #[test]
+    fn disconnected_shows_panel_with_retry_hint() {
+        let mut state = AppState::new(Period::Today);
+        state.connection = ConnState::Disconnected("no se pudo abrir la base".into());
+        let text = render_to_lines(50, 12, |f| draw(f, &state)).join("\n");
+        assert!(text.contains("Demonio no disponible"), "{text}");
+        assert!(text.contains("reintentar"), "{text}");
+        assert!(text.contains("no se pudo abrir la base"), "{text}");
+    }
 }
 
 #[cfg(test)]
