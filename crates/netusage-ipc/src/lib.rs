@@ -7,3 +7,8 @@
 pub mod codec;
 pub mod error;
 pub mod protocol;
+
+pub use error::IpcError;
+pub use protocol::{
+    AppUsage, Period, Request, Response, DEFAULT_SOCKET_PATH, PROTOCOL_VERSION,
+};
