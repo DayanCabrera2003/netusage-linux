@@ -1,16 +1,21 @@
 //! Widget del selector de periodo: pestañas hoy/semana/mes/mes anterior.
 
 use ratatui::layout::Rect;
-use ratatui::style::{Modifier, Style};
-use ratatui::widgets::{Block, Borders, Tabs};
+use ratatui::style::Style;
+use ratatui::text::Span;
+use ratatui::widgets::Tabs;
 use ratatui::Frame;
 
 use crate::period::Period;
 use crate::state::AppState;
+use crate::ui::theme;
 
 /// Dibuja las cuatro pestañas resaltando el periodo activo.
 pub fn render(frame: &mut Frame, area: Rect, state: &AppState) {
-    let titles: Vec<&str> = Period::all().iter().map(|p| p.label()).collect();
+    let titles: Vec<Span> = Period::all()
+        .iter()
+        .map(|p| Span::styled(format!(" {} ", p.label()), Style::default()))
+        .collect();
     let selected = Period::all()
         .iter()
         .position(|p| *p == state.period)
@@ -18,8 +23,9 @@ pub fn render(frame: &mut Frame, area: Rect, state: &AppState) {
 
     let tabs = Tabs::new(titles)
         .select(selected)
-        .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
-        .block(Block::default().borders(Borders::ALL).title(" Periodo "));
+        .divider("·")
+        .highlight_style(theme::highlight())
+        .block(theme::panel(" Periodo "));
     frame.render_widget(tabs, area);
 }
 
