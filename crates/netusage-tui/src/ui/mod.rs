@@ -63,23 +63,8 @@ fn draw_disconnected(frame: &mut Frame, area: Rect, reason: &str) {
     frame.render_widget(panel, area);
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{draw, render_to_lines};
-    use crate::period::Period;
-    use crate::state::{AppState, ConnState};
-
-    #[test]
-    fn disconnected_shows_panel_with_retry_hint() {
-        let mut state = AppState::new(Period::Today);
-        state.connection = ConnState::Disconnected("no se pudo abrir la base".into());
-        let text = render_to_lines(50, 12, |f| draw(f, &state)).join("\n");
-        assert!(text.contains("Demonio no disponible"), "{text}");
-        assert!(text.contains("reintentar"), "{text}");
-        assert!(text.contains("no se pudo abrir la base"), "{text}");
-    }
-}
-
+/// Renderiza `draw_fn` en un `TestBackend` y devuelve el buffer como líneas de
+/// texto, para asertar contenido en los tests de los widgets.
 #[cfg(test)]
 pub(crate) fn render_to_lines<F>(width: u16, height: u16, draw_fn: F) -> Vec<String>
 where
@@ -101,4 +86,21 @@ where
         lines.push(line.trim_end().to_string());
     }
     lines
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{draw, render_to_lines};
+    use crate::period::Period;
+    use crate::state::{AppState, ConnState};
+
+    #[test]
+    fn disconnected_shows_panel_with_retry_hint() {
+        let mut state = AppState::new(Period::Today);
+        state.connection = ConnState::Disconnected("no se pudo abrir la base".into());
+        let text = render_to_lines(50, 12, |f| draw(f, &state)).join("\n");
+        assert!(text.contains("Demonio no disponible"), "{text}");
+        assert!(text.contains("reintentar"), "{text}");
+        assert!(text.contains("no se pudo abrir la base"), "{text}");
+    }
 }

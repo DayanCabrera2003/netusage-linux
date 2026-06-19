@@ -24,8 +24,6 @@ pub enum Message {
     CloseDetail,
     /// Forzar un refresco de datos.
     Refresh,
-    /// Tick de polling.
-    Tick,
     /// Datos del periodo cargados.
     DataLoaded(PeriodSummary),
     /// La carga de datos falló, con el motivo.
@@ -52,8 +50,6 @@ pub fn update(state: &mut AppState, msg: Message) {
         Message::ToggleDetail => state.show_detail = !state.show_detail,
         Message::CloseDetail => state.show_detail = false,
         Message::Refresh => state.connection = ConnState::Loading,
-        // El tick no cambia el estado por sí mismo; el bucle decide si refresca.
-        Message::Tick => {}
         Message::DataLoaded(summary) => {
             state.set_summary(summary);
             state.connection = ConnState::Ready;
@@ -90,7 +86,10 @@ mod tests {
     #[test]
     fn data_loaded_sets_ready() {
         let mut state = AppState::new(Period::Today);
-        update(&mut state, Message::DataLoaded(empty_summary(Period::Today)));
+        update(
+            &mut state,
+            Message::DataLoaded(empty_summary(Period::Today)),
+        );
         assert_eq!(state.connection, ConnState::Ready);
         assert!(state.summary.is_some());
     }

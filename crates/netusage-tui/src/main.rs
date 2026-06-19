@@ -8,10 +8,7 @@
 //! de ratatui; estado y reductor (`state`, `update`); widgets de render puros
 //! (`ui`); y la orquestación del bucle (`app`, `event`).
 
-// Durante la construcción incremental hay módulos aún no cableados; el `app`
-// final (commit de cableado) los usa todos y entonces se retira este allow.
-#![allow(dead_code)]
-
+mod app;
 mod cli;
 mod data;
 mod error;
@@ -24,6 +21,14 @@ mod state;
 mod ui;
 mod update;
 
+use clap::Parser;
+
+use crate::cli::Cli;
+
 fn main() {
-    println!("netusage-tui (placeholder)");
+    let cli = Cli::parse();
+    if let Err(err) = app::run(cli) {
+        eprintln!("error: {err}");
+        std::process::exit(1);
+    }
 }
