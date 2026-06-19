@@ -61,7 +61,7 @@ fn row(app: &AppUsage, max: u64, grand_total: u64) -> ListItem<'static> {
         Style::default()
     };
 
-    let line = Line::from(vec![
+    let mut spans = vec![
         Span::styled(
             format!(
                 "{:<width$} ",
@@ -77,8 +77,17 @@ fn row(app: &AppUsage, max: u64, grand_total: u64) -> ListItem<'static> {
             Style::default().add_modifier(Modifier::BOLD),
         ),
         Span::styled(format!(" {pct:>3}%"), theme::dim()),
-    ]);
-    ListItem::new(line)
+    ];
+
+    // Marcar las apps VPN/túnel: su fila puede transportar tráfico de otras.
+    if crate::vpn::is_vpn(&app.app_key, &app.display_name) {
+        spans.push(Span::styled(
+            " [VPN]",
+            Style::default().fg(theme::TX).add_modifier(Modifier::BOLD),
+        ));
+    }
+
+    ListItem::new(Line::from(spans))
 }
 
 /// Trunca `name` a `max` caracteres, con elipsis si se recorta.

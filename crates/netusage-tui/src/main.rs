@@ -20,6 +20,7 @@ mod sort;
 mod state;
 mod ui;
 mod update;
+mod vpn;
 
 use clap::Parser;
 
