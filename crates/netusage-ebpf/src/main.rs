@@ -63,15 +63,6 @@ pub fn netusage_sock_create(ctx: SockContext) -> i32 {
     ALLOW
 }
 
-/// Corre cuando un socket se cierra. Publica su cookie para que el espacio de
-/// usuario finalice sus bytes y libere la entrada del mapa con exactitud.
-#[cgroup_sock(sock_release)]
-pub fn netusage_sock_release(ctx: SockContext) -> i32 {
-    let cookie = unsafe { bpf_get_socket_cookie(ctx.sock as *mut _) };
-    maps::emit_sock_death(cookie);
-    ALLOW
-}
-
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {

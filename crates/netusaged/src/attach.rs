@@ -22,19 +22,17 @@ use aya::Ebpf;
 const INGRESS: &str = "netusage_ingress";
 const EGRESS: &str = "netusage_egress";
 const SOCK_CREATE: &str = "netusage_sock_create";
-const SOCK_RELEASE: &str = "netusage_sock_release";
 
 /// Pista a mostrar ante un fallo por falta de privilegios.
 const PRIV_HINT: &str = "(¿faltan privilegios? se necesita root o \
      CAP_BPF+CAP_PERFMON+CAP_NET_ADMIN; ver `netusaged --check`)";
 
-/// Carga y engancha los programas al `cgroup` (la raíz de cgroup v2).
+/// Carga y engancha los tres programas al `cgroup` (la raíz de cgroup v2).
 pub fn attach_all<T: AsFd>(bpf: &mut Ebpf, cgroup: T) -> Result<()> {
     let fd = cgroup.as_fd();
     attach_skb(bpf, INGRESS, fd, CgroupSkbAttachType::Ingress)?;
     attach_skb(bpf, EGRESS, fd, CgroupSkbAttachType::Egress)?;
-    attach_sock(bpf, SOCK_CREATE, fd)?;
-    attach_sock(bpf, SOCK_RELEASE, fd)?;
+    attach_sock_create(bpf, fd)?;
     Ok(())
 }
 
@@ -59,19 +57,18 @@ fn attach_skb(
     Ok(())
 }
 
-/// Carga y engancha un programa `cgroup/sock` (sock_create o sock_release) al
-/// cgroup. El tipo de enganche lo fija la sección del programa.
-fn attach_sock(bpf: &mut Ebpf, name: &str, cgroup: impl AsFd) -> Result<()> {
+/// Carga y engancha el programa `cgroup/sock_create` al cgroup.
+fn attach_sock_create(bpf: &mut Ebpf, cgroup: impl AsFd) -> Result<()> {
     let program: &mut CgroupSock = bpf
-        .program_mut(name)
-        .with_context(|| format!("programa eBPF '{name}' no encontrado"))?
+        .program_mut(SOCK_CREATE)
+        .with_context(|| format!("programa eBPF '{SOCK_CREATE}' no encontrado"))?
         .try_into()
-        .with_context(|| format!("'{name}' no es un programa cgroup_sock"))?;
+        .with_context(|| format!("'{SOCK_CREATE}' no es un programa cgroup_sock"))?;
     program
         .load()
-        .with_context(|| format!("cargando '{name}' {PRIV_HINT}"))?;
+        .with_context(|| format!("cargando '{SOCK_CREATE}' {PRIV_HINT}"))?;
     program
         .attach(cgroup, CgroupAttachMode::Single)
-        .with_context(|| format!("enganchando '{name}' al cgroup raíz"))?;
+        .with_context(|| format!("enganchando '{SOCK_CREATE}' al cgroup raíz"))?;
     Ok(())
 }
