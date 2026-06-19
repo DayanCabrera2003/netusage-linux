@@ -20,6 +20,7 @@ mod privileges;
 mod report;
 mod resolver;
 mod sampler;
+mod selftest;
 mod supervisor;
 
 use std::path::PathBuf;
@@ -44,6 +45,10 @@ fn main() {
 
     if cli.check {
         std::process::exit(check::run(cli.json));
+    }
+
+    if cli.selftest_load {
+        std::process::exit(selftest::run());
     }
 
     let result = match cli.command {
