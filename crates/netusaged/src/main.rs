@@ -66,6 +66,10 @@ fn main() {
 /// toda la monitorización: al dropearse se desenganchan los programas y se
 /// liberan los mapas.
 fn run(interval_secs: u64, db: Option<PathBuf>) -> Result<()> {
+    // Verificar el privilegio mínimo y reportarlo antes de tocar eBPF.
+    let mode = privileges::ensure_minimum()?;
+    tracing::info!("netusaged corriendo con {}", mode.describe());
+
     let root = cgroup::cgroup_v2_root()?;
     let bpf = loader::load()?;
 
