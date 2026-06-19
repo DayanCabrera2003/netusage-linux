@@ -3,6 +3,7 @@
 //! Todos los widgets son funciones de render puras sobre `&AppState`, testeables
 //! con el `TestBackend` de ratatui sin terminal real.
 
+mod period_bar;
 mod summary;
 
 use ratatui::layout::{Constraint, Layout};
@@ -14,12 +15,14 @@ use crate::state::AppState;
 pub fn draw(frame: &mut Frame, state: &AppState) {
     let area = frame.area();
     let chunks = Layout::vertical([
+        Constraint::Length(3), // selector de periodo
         Constraint::Length(3), // resumen del periodo
         Constraint::Min(1),    // (resto: widgets de commits siguientes)
     ])
     .split(area);
 
-    summary::render(frame, chunks[0], state);
+    period_bar::render(frame, chunks[0], state);
+    summary::render(frame, chunks[1], state);
 }
 
 #[cfg(test)]
