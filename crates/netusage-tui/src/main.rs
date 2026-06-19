@@ -12,11 +12,14 @@
 // final (commit de cableado) los usa todos y entonces se retira este allow.
 #![allow(dead_code)]
 
+mod data;
 mod error;
 mod format;
 mod model;
 mod period;
 mod sort;
+mod state;
+mod update;
 
 fn main() {
     println!("netusage-tui (placeholder)");
