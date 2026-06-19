@@ -22,7 +22,12 @@ impl Period {
 
     /// Los periodos en orden de presentación.
     pub fn all() -> [Period; 4] {
-        [Period::Today, Period::Week, Period::Month, Period::LastMonth]
+        [
+            Period::Today,
+            Period::Week,
+            Period::Month,
+            Period::LastMonth,
+        ]
     }
 
     /// Siguiente periodo (cicla al primero tras el último).
@@ -63,7 +68,12 @@ mod tests {
     fn all_lists_four_in_order() {
         assert_eq!(
             Period::all(),
-            [Period::Today, Period::Week, Period::Month, Period::LastMonth]
+            [
+                Period::Today,
+                Period::Week,
+                Period::Month,
+                Period::LastMonth
+            ]
         );
     }
 }

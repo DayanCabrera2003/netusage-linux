@@ -52,7 +52,10 @@ mod tests {
 
         let lines = render_to_lines(50, 3, |f| super::render(f, f.area(), &state));
         let text = lines.join("\n");
-        assert!(text.contains("Hoy"), "falta la etiqueta del periodo: {text}");
+        assert!(
+            text.contains("Hoy"),
+            "falta la etiqueta del periodo: {text}"
+        );
         assert!(text.contains("1.0 KiB"), "falta rx formateado: {text}");
         assert!(text.contains("2.0 KiB"), "falta tx formateado: {text}");
         assert!(text.contains("3.0 KiB"), "falta el total: {text}");
