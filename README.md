@@ -22,6 +22,38 @@ Guias por distribucion:
 - [Arch / derivadas](docs/install/arch.md) — PKGBUILD
 - [Cualquier distro](docs/install/manual-musl.md) — binario estatico musl
 
+## Uso
+
+Arranca el demonio (una sola vez; systemd lo mantiene activo en reinicios):
+
+```sh
+sudo systemctl enable --now netusaged
+```
+
+Abre la interfaz de terminal:
+
+```sh
+netusage-tui
+```
+
+La TUI muestra el consumo de red total y por aplicación con selector de
+periodo (hoy / semana / mes / mes anterior).
+
+| Tecla | Accion |
+|-------|--------|
+| `Tab` / `→` | Periodo siguiente |
+| `←` | Periodo anterior |
+| `↑` / `↓` | Navegar la lista |
+| `Enter` | Ver detalle de la app |
+| `r` | Refrescar |
+| `q` / `Esc` | Salir |
+
+Para diagnosticar el entorno antes de instalar:
+
+```sh
+netusaged --check
+```
+
 ## Stack eBPF
 
 Stack eBPF: aya (todo en Rust, kernel + usuario). Ver la decisión 0001 en la
