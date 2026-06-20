@@ -29,17 +29,25 @@ sudo systemctl enable --now netusaged
 ## Modelo de privilegios
 
 El servicio corre como el usuario de sistema `netusaged`, **sin root pleno**.
-En kernels >= 5.8 systemd le concede solo `CAP_BPF`, `CAP_PERFMON` y
-`CAP_NET_ADMIN` (`AmbientCapabilities`), suficientes para cargar y enganchar los
-programas eBPF. En kernels < 5.8 esas capabilities no existen y el demonio
-requiere root (lo detecta y lo declara en el log).
+En kernels >= 5.8 systemd le concede vía `AmbientCapabilities`:
+
+- `CAP_BPF`, `CAP_PERFMON`, `CAP_NET_ADMIN`: cargar y enganchar los programas
+  eBPF.
+- `CAP_SYS_PTRACE`: resolver el ejecutable dueño de cada socket leyendo
+  `/proc/<pid>/exe` y `/proc/<pid>/fd`. Como las apps del escritorio corren como
+  otros usuarios, sin esta capability el kernel (`ptrace_may_access`) deniega
+  esas lecturas entre uids distintos y **todo el tráfico caería en "Sistema /
+  Otros"** por falta de atribución.
+
+En kernels < 5.8 las capabilities de eBPF no existen y el demonio requiere root
+(lo detecta y lo declara en el log).
 
 Verificación:
 
 ```sh
 pid=$(systemctl show -p MainPID --value netusaged)
 ps -o user= -p "$pid"        # netusaged (no root)
-getpcaps "$pid"              # cap_bpf, cap_perfmon, cap_net_admin
+getpcaps "$pid"              # cap_bpf, cap_perfmon, cap_net_admin, cap_sys_ptrace
 ```
 
 ## Cómo accede la interfaz a los datos
