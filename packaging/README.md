@@ -8,8 +8,9 @@ documentación del proyecto; describe cómo instalar el demonio.
 Requisitos: kernel >= 5.8 con cgroup v2 unificado y BTF (ver `netusaged --check`).
 
 ```sh
-# 1. Binario
-sudo install -m 0755 target/release/netusaged /usr/bin/netusaged
+# 1. Binarios
+sudo install -m 0755 target/release/netusaged    /usr/bin/netusaged
+sudo install -m 0755 target/release/netusage-tui /usr/bin/netusage-tui
 
 # 2. Ficheros systemd
 sudo install -m 0644 packaging/systemd/netusaged.service /etc/systemd/system/netusaged.service
