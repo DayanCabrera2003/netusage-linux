@@ -18,7 +18,7 @@ use std::time::Duration;
 use anyhow::{Context, Result};
 use aya::maps::{MapData, RingBuf};
 use aya::Ebpf;
-use netusage_common::counters::SOCK_BIRTH_MAP_NAME;
+use netusage_common::counters::{SocketCookie, SOCK_BIRTH_MAP_NAME};
 
 use crate::aggregator::{read_counters, Aggregator, CounterSample};
 use crate::attach::attach_all;
@@ -62,6 +62,11 @@ pub fn run(
     );
 
     let mut aggregator = Aggregator::new();
+    // Cookies que han aparecido en al menos un muestreo eBPF. Solo estas se
+    // podan del cookie_map cuando desaparecen de los contadores (socket
+    // cerrado). Las cookies del backfill o de sock_create que aún no han
+    // generado tráfico se conservan hasta que se confirmen.
+    let mut seen_in_ebpf: HashSet<SocketCookie> = HashSet::new();
     loop {
         let samples = read_counters(&bpf).context("leyendo los mapas de contadores")?;
 
@@ -73,7 +78,7 @@ pub fn run(
             })
         };
 
-        prune_cookie_map(&cookie_map, &samples);
+        prune_cookie_map(&cookie_map, &samples, &mut seen_in_ebpf);
         monitor::print_app_list(&usages);
 
         if let Some(sampler) = sampler.as_mut() {
@@ -86,12 +91,26 @@ pub fn run(
     }
 }
 
-/// Elimina del mapa compartido las cookies que ya no aparecen en los contadores
-/// (sockets desalojados por el LRU), para que no crezca sin límite.
-fn prune_cookie_map(cookie_map: &CookieMap, samples: &[CounterSample]) {
-    let live: HashSet<_> = samples.iter().map(|&(cookie, _, _)| cookie).collect();
-    cookie_map
-        .lock()
-        .unwrap()
-        .retain(|cookie, _| live.contains(cookie));
+/// Elimina del mapa compartido las cookies que ya no aparecen en los
+/// contadores (sockets desalojados por el LRU o cerrados), pero solo si ya
+/// habían aparecido en algún muestreo anterior (`seen_in_ebpf`).
+///
+/// Las cookies precargadas por el backfill o registradas por `sock_create`
+/// que aún no han generado tráfico medible no se podan, porque el socket
+/// puede estar simplemente inactivo: si se podasen y luego generasen tráfico,
+/// ese tráfico caería en "Sistema / Otros" sin atribución.
+fn prune_cookie_map(
+    cookie_map: &CookieMap,
+    samples: &[CounterSample],
+    seen_in_ebpf: &mut HashSet<SocketCookie>,
+) {
+    let live: HashSet<SocketCookie> = samples.iter().map(|&(c, _, _)| c).collect();
+    // Marcar como confirmadas las cookies activas en este muestreo.
+    seen_in_ebpf.extend(live.iter().copied());
+    // Podar solo las cookies confirmadas que ya no están en la muestra.
+    let mut map = cookie_map.lock().unwrap();
+    map.retain(|cookie, _| !seen_in_ebpf.contains(cookie) || live.contains(cookie));
+    // Limpiar seen_in_ebpf para las cookies que acaban de podarse, para que
+    // el set no crezca sin límite a lo largo de sesiones largas.
+    seen_in_ebpf.retain(|c| map.contains_key(c));
 }
