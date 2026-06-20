@@ -6,6 +6,22 @@ aplicación usando eBPF (`cgroup_skb`) sobre los scopes de cgroup v2 de systemd.
 
 Lenguaje principal: Rust. Distros objetivo: Debian, Arch, Fedora y derivadas.
 
+## Instalacion
+
+Requisitos: kernel >= 5.8, cgroup v2 unificado y BTF
+(`/sys/kernel/btf/vmlinux`). Verifica tu entorno con:
+
+```sh
+netusaged --check
+```
+
+Guias por distribucion:
+
+- [Debian / Ubuntu](docs/install/debian-ubuntu.md) — paquete `.deb`
+- [Fedora / openSUSE](docs/install/fedora.md) — paquete `.rpm`
+- [Arch / derivadas](docs/install/arch.md) — PKGBUILD
+- [Cualquier distro](docs/install/manual-musl.md) — binario estatico musl
+
 ## Stack eBPF
 
 Stack eBPF: aya (todo en Rust, kernel + usuario). Ver la decisión 0001 en la
