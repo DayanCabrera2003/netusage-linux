@@ -21,15 +21,18 @@ RuntimeDirectoryMode=0755
 
 # --- Modelo de privilegios: capabilities, no root pleno (kernel >= 5.8) ---
 # CAP_BPF + CAP_PERFMON + CAP_NET_ADMIN: cargar y enganchar los programas eBPF.
-# CAP_SYS_PTRACE: imprescindible para la atribucion por aplicacion. El demonio
-# corre como el usuario de sistema 'netusaged', pero las apps del escritorio
-# corren como otros usuarios; resolver el ejecutable dueno de cada socket exige
-# leer /proc/<pid>/exe y /proc/<pid>/fd de esos procesos, lo que el kernel
-# protege con ptrace_may_access() y solo permite, entre uids distintos, con
-# CAP_SYS_PTRACE. Sin ella, todo el trafico cae en "Sistema / Otros" porque
-# ningun socket de otro usuario se puede atribuir.
-AmbientCapabilities=CAP_BPF CAP_PERFMON CAP_NET_ADMIN CAP_SYS_PTRACE
-CapabilityBoundingSet=CAP_BPF CAP_PERFMON CAP_NET_ADMIN CAP_SYS_PTRACE
+# CAP_SYS_PTRACE: resolver el ejecutable dueno de un socket leyendo el symlink
+# /proc/<pid>/exe de procesos de otros usuarios; el kernel lo protege con
+# ptrace_may_access() y solo lo permite, entre uids distintos, con esta
+# capability. Es el camino de atribucion en vivo (cgroup/sock_create).
+# CAP_DAC_READ_SEARCH: leer los directorios /proc/<pid>/fd de otros usuarios
+# (modo 0500, propiedad del usuario dueno) para cruzar inode de socket -> pid en
+# el backfill de sockets preexistentes. CAP_SYS_PTRACE no basta aqui: el
+# bloqueo es el DAC del directorio, no ptrace. Sin esta capability el backfill
+# correlaciona 0 sockets y el trafico de conexiones ya abiertas antes de
+# arrancar (p. ej. el tunel de un VPN) cae en "Sistema / Otros".
+AmbientCapabilities=CAP_BPF CAP_PERFMON CAP_NET_ADMIN CAP_SYS_PTRACE CAP_DAC_READ_SEARCH
+CapabilityBoundingSet=CAP_BPF CAP_PERFMON CAP_NET_ADMIN CAP_SYS_PTRACE CAP_DAC_READ_SEARCH
 NoNewPrivileges=true
 
 # --- Hardening del sandbox (compatible con eBPF cgroup_skb) ---
