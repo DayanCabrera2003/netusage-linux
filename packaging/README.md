@@ -33,11 +33,17 @@ En kernels >= 5.8 systemd le concede vía `AmbientCapabilities`:
 
 - `CAP_BPF`, `CAP_PERFMON`, `CAP_NET_ADMIN`: cargar y enganchar los programas
   eBPF.
-- `CAP_SYS_PTRACE`: resolver el ejecutable dueño de cada socket leyendo
-  `/proc/<pid>/exe` y `/proc/<pid>/fd`. Como las apps del escritorio corren como
-  otros usuarios, sin esta capability el kernel (`ptrace_may_access`) deniega
-  esas lecturas entre uids distintos y **todo el tráfico caería en "Sistema /
-  Otros"** por falta de atribución.
+- `CAP_SYS_PTRACE`: resolver el ejecutable dueño de cada socket leyendo el
+  symlink `/proc/<pid>/exe` de procesos de otros usuarios (atribución en vivo
+  vía `cgroup/sock_create`). El kernel lo protege con `ptrace_may_access`, que
+  entre uids distintos solo pasa con esta capability. Sin ella, **todo el
+  tráfico caería en "Sistema / Otros"**.
+- `CAP_DAC_READ_SEARCH`: leer los directorios `/proc/<pid>/fd` de otros usuarios
+  (modo `0500`, propiedad del usuario dueño) para cruzar inode de socket -> pid
+  en el backfill de sockets preexistentes. Aquí el bloqueo es el DAC del
+  directorio, no `ptrace`, así que `CAP_SYS_PTRACE` no basta. Sin ella el
+  backfill correlaciona 0 sockets y el tráfico de conexiones abiertas antes de
+  arrancar (p. ej. el túnel de un VPN) cae en "Sistema / Otros".
 
 En kernels < 5.8 las capabilities de eBPF no existen y el demonio requiere root
 (lo detecta y lo declara en el log).
@@ -47,7 +53,7 @@ Verificación:
 ```sh
 pid=$(systemctl show -p MainPID --value netusaged)
 ps -o user= -p "$pid"        # netusaged (no root)
-getpcaps "$pid"              # cap_bpf, cap_perfmon, cap_net_admin, cap_sys_ptrace
+getpcaps "$pid"              # cap_bpf, cap_perfmon, cap_net_admin, cap_sys_ptrace, cap_dac_read_search
 ```
 
 ## Cómo accede la interfaz a los datos
