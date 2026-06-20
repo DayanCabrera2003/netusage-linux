@@ -47,9 +47,6 @@ assets = [
     ["../../packaging/systemd/tmpfiles.d/netusaged.conf", "usr/lib/tmpfiles.d/", "644"],
 ]
 maintainer-scripts = "../../packaging/deb/"
-# cargo-deb registra el activado de la unit; sysusers y tmpfiles se procesan en
-# el postinst.
-systemd-units = { unit-name = "netusaged", enable = false, start = false }
 
 # --- Empaquetado .rpm (cargo-generate-rpm) ---
 # Las rutas de origen son relativas al directorio de este manifiesto. Construir
