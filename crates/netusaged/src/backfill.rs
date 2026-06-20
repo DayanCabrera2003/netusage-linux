@@ -52,19 +52,30 @@ pub fn backfill(cookie_map: &CookieMap) -> Result<usize> {
     let inode_to_pid = build_inode_pid_map();
     let mut map = cookie_map.lock().unwrap();
     let mut resolved = 0;
+    // Desglose para diagnostico (nivel debug): por que un socket no se resolvio.
+    // 'sin_pid' alto con 'inode->pid' casi vacio delata falta de
+    // CAP_DAC_READ_SEARCH para leer /proc/<pid>/fd de otros usuarios.
+    let (mut no_pid, mut resolve_fail) = (0, 0);
 
     for (inode, cookie) in sockets {
         if cookie == NO_COOKIE || map.contains_key(&cookie) {
             continue;
         }
         let Some(&pid) = inode_to_pid.get(&inode) else {
+            no_pid += 1;
             continue;
         };
         if let Some(identity) = identity::resolve_pid(pid) {
             map.insert(cookie, identity);
             resolved += 1;
+        } else {
+            resolve_fail += 1;
         }
     }
+    tracing::debug!(
+        "backfill: inode->pid={} resueltos={resolved} sin_pid={no_pid} resolve_fallo={resolve_fail}",
+        inode_to_pid.len()
+    );
     Ok(resolved)
 }
 
