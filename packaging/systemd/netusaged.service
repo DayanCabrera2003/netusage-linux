@@ -20,8 +20,16 @@ RuntimeDirectory=netusage
 RuntimeDirectoryMode=0755
 
 # --- Modelo de privilegios: capabilities, no root pleno (kernel >= 5.8) ---
-AmbientCapabilities=CAP_BPF CAP_PERFMON CAP_NET_ADMIN
-CapabilityBoundingSet=CAP_BPF CAP_PERFMON CAP_NET_ADMIN
+# CAP_BPF + CAP_PERFMON + CAP_NET_ADMIN: cargar y enganchar los programas eBPF.
+# CAP_SYS_PTRACE: imprescindible para la atribucion por aplicacion. El demonio
+# corre como el usuario de sistema 'netusaged', pero las apps del escritorio
+# corren como otros usuarios; resolver el ejecutable dueno de cada socket exige
+# leer /proc/<pid>/exe y /proc/<pid>/fd de esos procesos, lo que el kernel
+# protege con ptrace_may_access() y solo permite, entre uids distintos, con
+# CAP_SYS_PTRACE. Sin ella, todo el trafico cae en "Sistema / Otros" porque
+# ningun socket de otro usuario se puede atribuir.
+AmbientCapabilities=CAP_BPF CAP_PERFMON CAP_NET_ADMIN CAP_SYS_PTRACE
+CapabilityBoundingSet=CAP_BPF CAP_PERFMON CAP_NET_ADMIN CAP_SYS_PTRACE
 NoNewPrivileges=true
 
 # --- Hardening del sandbox (compatible con eBPF cgroup_skb) ---
