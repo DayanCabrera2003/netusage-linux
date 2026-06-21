@@ -1,0 +1,13 @@
+#!/bin/sh
+# Post-removal del paquete .deb de netusage.
+#
+# Desactiva el servicio al eliminar o purgar el paquete y recarga systemd para
+# que olvide la unit ya retirada. Best-effort: no debe abortar la operacion.
+set -e
+
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl disable netusaged.service >/dev/null 2>&1 || true
+        systemctl daemon-reload >/dev/null 2>&1 || true
+    fi
+fi

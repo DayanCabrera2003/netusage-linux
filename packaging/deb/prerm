@@ -1,0 +1,12 @@
+#!/bin/sh
+# Pre-removal del paquete .deb de netusage.
+#
+# Detiene el servicio antes de retirar los ficheros, pero solo cuando se elimina
+# o desconfigura (no en una actualizacion, donde el postinst lo reinicia).
+set -e
+
+if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
+    if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
+        systemctl stop netusaged.service >/dev/null 2>&1 || true
+    fi
+fi

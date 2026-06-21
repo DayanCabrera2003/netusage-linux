@@ -2,8 +2,9 @@
 # Postinstalacion del paquete .deb de netusage.
 #
 # Crea el usuario de sistema y los directorios de estado/runtime aplicando los
-# ficheros sysusers.d y tmpfiles.d que instala el paquete. cargo-deb anade a
-# continuacion su propio fragmento para registrar la unit systemd.
+# ficheros sysusers.d y tmpfiles.d que instala el paquete, y luego activa el
+# servicio para que el demonio empiece a monitorizar (y cree la base) sin que el
+# usuario tenga que arrancarlo a mano.
 set -e
 
 if [ "$1" = "configure" ]; then
@@ -14,5 +15,15 @@ if [ "$1" = "configure" ]; then
     # Crear /var/lib/netusage y /run/netusage con sus permisos.
     if command -v systemd-tmpfiles >/dev/null 2>&1; then
         systemd-tmpfiles --create /usr/lib/tmpfiles.d/netusaged.conf >/dev/null 2>&1 || true
+    fi
+    # Activar el servicio. `enable` se puede hacer aunque systemd no este
+    # corriendo (p. ej. en un chroot de build); `start` solo si hay un systemd
+    # activo. Todo best-effort: un fallo no debe abortar la instalacion.
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl daemon-reload >/dev/null 2>&1 || true
+        systemctl enable netusaged.service >/dev/null 2>&1 || true
+        if [ -d /run/systemd/system ]; then
+            systemctl start netusaged.service >/dev/null 2>&1 || true
+        fi
     fi
 fi
