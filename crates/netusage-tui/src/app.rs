@@ -100,6 +100,15 @@ fn run_loop(
 fn load(data: &DataSource, state: &mut AppState) {
     match data.fetch(state.period) {
         Ok(summary) => update(state, Message::DataLoaded(summary)),
-        Err(err) => update(state, Message::DataFailed(err.to_string())),
+        Err(err) => {
+            // Traducir el fallo crudo a una causa y un comando accionables,
+            // usando el diagnostico de entorno que la TUI ya calculo al arrancar.
+            let reason = crate::health::connection_hint(
+                data.db_path(),
+                &err.to_string(),
+                state.degraded_note.as_deref(),
+            );
+            update(state, Message::DataFailed(reason));
+        }
     }
 }

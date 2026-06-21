@@ -90,22 +90,27 @@ fn draw_update_banner(frame: &mut Frame, area: Rect, note: &str) {
 
 /// Panel central cuando el demonio o la base no están disponibles.
 fn draw_disconnected(frame: &mut Frame, area: Rect, reason: &str) {
-    let text = Text::from(vec![
+    let mut lines = vec![
         Line::from(Span::styled(
             "Demonio no disponible",
             Style::default().fg(theme::TX).add_modifier(Modifier::BOLD),
         )),
         Line::from(""),
-        Line::from(Span::styled(reason.to_string(), theme::dim())),
-        Line::from(""),
-        Line::from(vec![
-            Span::raw("Pulsa "),
-            Span::styled("r", Style::default().fg(theme::ACCENT)),
-            Span::raw(" para reintentar, "),
-            Span::styled("q", Style::default().fg(theme::ACCENT)),
-            Span::raw(" para salir."),
-        ]),
-    ]);
+    ];
+    // El motivo puede traer varias lineas (causa + comando sugerido): cada una
+    // se pinta como una linea tenue independiente.
+    for line in reason.lines() {
+        lines.push(Line::from(Span::styled(line.to_string(), theme::dim())));
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from(vec![
+        Span::raw("Pulsa "),
+        Span::styled("r", Style::default().fg(theme::ACCENT)),
+        Span::raw(" para reintentar, "),
+        Span::styled("q", Style::default().fg(theme::ACCENT)),
+        Span::raw(" para salir."),
+    ]));
+    let text = Text::from(lines);
     let panel = Paragraph::new(text)
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true })

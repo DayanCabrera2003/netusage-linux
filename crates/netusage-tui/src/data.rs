@@ -27,6 +27,11 @@ impl DataSource {
         Self { db_path }
     }
 
+    /// Ruta de la base que consulta esta fuente (para diagnosticar fallos).
+    pub fn db_path(&self) -> &std::path::Path {
+        &self.db_path
+    }
+
     /// Consulta el resumen del `period`: total y desglose por app, ya ordenado.
     pub fn fetch(&self, period: Period) -> Result<PeriodSummary> {
         let store = Store::open_readonly(&self.db_path)?;
