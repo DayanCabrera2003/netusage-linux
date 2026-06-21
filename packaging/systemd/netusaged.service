@@ -18,6 +18,12 @@ StateDirectoryMode=0755
 # Directorio del socket en /run/netusage.
 RuntimeDirectory=netusage
 RuntimeDirectoryMode=0755
+# La base usa WAL: SQLite crea los ficheros auxiliares -wal y -shm con el umask
+# del proceso. La interfaz corre como otro usuario y los abre en solo lectura,
+# asi que deben quedar legibles por todos (0644). Se fija el umask explicito
+# para no depender de un UMask global mas restrictivo del sistema, que dejaria
+# esos ficheros en 0600 y romperia la lectura de la interfaz.
+UMask=0022
 
 # --- Modelo de privilegios: capabilities, no root pleno (kernel >= 5.8) ---
 # CAP_BPF + CAP_PERFMON + CAP_NET_ADMIN: cargar y enganchar los programas eBPF.
