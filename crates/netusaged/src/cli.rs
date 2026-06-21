@@ -110,3 +110,16 @@ pub enum ReportPeriod {
     Month,
     LastMonth,
 }
+
+impl ReportPeriod {
+    /// Traduce al `Period` de la capa de persistencia.
+    pub fn to_store(self) -> netusage_store::Period {
+        use netusage_store::Period;
+        match self {
+            ReportPeriod::Today => Period::Today,
+            ReportPeriod::Week => Period::ThisWeek,
+            ReportPeriod::Month => Period::ThisMonth,
+            ReportPeriod::LastMonth => Period::LastMonth,
+        }
+    }
+}

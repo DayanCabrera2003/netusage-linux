@@ -7,7 +7,7 @@ use std::path::Path;
 
 use anyhow::{Context, Result};
 use chrono::Utc;
-use netusage_store::{Period, Store};
+use netusage_store::Store;
 
 use crate::cli::ReportPeriod;
 use crate::monitor::human_bytes;
@@ -39,12 +39,13 @@ fn print_period(
     report_period: ReportPeriod,
     now: chrono::DateTime<Utc>,
 ) -> Result<()> {
-    let (period, label) = match report_period {
-        ReportPeriod::Today => (Period::Today, "Hoy"),
-        ReportPeriod::Week => (Period::ThisWeek, "Esta semana"),
-        ReportPeriod::Month => (Period::ThisMonth, "Este mes"),
-        ReportPeriod::LastMonth => (Period::LastMonth, "Mes anterior"),
+    let label = match report_period {
+        ReportPeriod::Today => "Hoy",
+        ReportPeriod::Week => "Esta semana",
+        ReportPeriod::Month => "Este mes",
+        ReportPeriod::LastMonth => "Mes anterior",
     };
+    let period = report_period.to_store();
 
     let total = store.usage_total(period, now)?;
     let apps = store.usage_by_app(period, now)?;
