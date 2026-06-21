@@ -60,9 +60,11 @@ impl Store {
     fn init(mut conn: Connection) -> Result<Store> {
         // WAL mejora la concurrencia lectura/escritura; synchronous=NORMAL es un
         // buen equilibrio durabilidad/rendimiento con WAL; foreign_keys activa el
-        // borrado en cascada de samples/daily al borrar una app.
+        // borrado en cascada de samples/daily al borrar una app; busy_timeout hace
+        // que la conexión espere en lugar de fallar si hay un bloqueo de escritura.
         conn.execute_batch(
-            "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA foreign_keys=ON;",
+            "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA foreign_keys=ON; \
+             PRAGMA busy_timeout=5000;",
         )?;
         schema::migrate(&mut conn)?;
         Ok(Store {
