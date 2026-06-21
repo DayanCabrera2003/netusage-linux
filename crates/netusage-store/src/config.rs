@@ -46,8 +46,6 @@ pub struct StoreConfig {
     pub timezone: String,
     /// Días que se conservan las muestras finas antes de compactarlas.
     pub fine_retention_days: u32,
-    /// Días que se conservan los agregados diarios.
-    pub daily_retention_days: u32,
 }
 
 impl Default for StoreConfig {
@@ -58,7 +56,6 @@ impl Default for StoreConfig {
             week_start: WeekStart::Monday,
             timezone: "UTC".to_string(),
             fine_retention_days: 14,
-            daily_retention_days: 730,
         }
     }
 }
@@ -135,7 +132,6 @@ mod tests {
             week_start: WeekStart::Sunday,
             timezone: "Europe/Madrid".to_string(),
             fine_retention_days: 7,
-            daily_retention_days: 365,
         };
         store.save_config(&cfg).unwrap();
         assert_eq!(store.load_config().unwrap(), cfg);

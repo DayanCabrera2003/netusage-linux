@@ -64,7 +64,6 @@ pub fn show(db: &Path) -> Result<()> {
     println!("week_start          = {:?}", cfg.week_start);
     println!("sample_interval_secs= {}", cfg.sample_interval_secs);
     println!("fine_retention_days = {}", cfg.fine_retention_days);
-    println!("daily_retention_days= {}", cfg.daily_retention_days);
     Ok(())
 }
 
@@ -77,7 +76,6 @@ pub fn set(
     week_start: Option<WeekStartArg>,
     sample_interval_secs: Option<u64>,
     fine_retention_days: Option<u32>,
-    daily_retention_days: Option<u32>,
 ) -> Result<()> {
     let store = open(db)?;
     let mut cfg = store.load_config().context("cargando la configuración")?;
@@ -99,9 +97,6 @@ pub fn set(
     }
     if let Some(d) = fine_retention_days {
         cfg.fine_retention_days = d;
-    }
-    if let Some(d) = daily_retention_days {
-        cfg.daily_retention_days = d;
     }
 
     store

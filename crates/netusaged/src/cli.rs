@@ -92,9 +92,6 @@ pub enum ConfigAction {
         /// Días de retención de las muestras finas.
         #[arg(long)]
         fine_retention_days: Option<u32>,
-        /// Días de retención de los agregados diarios.
-        #[arg(long)]
-        daily_retention_days: Option<u32>,
     },
 }
 

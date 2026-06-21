@@ -91,7 +91,6 @@ mod tests {
         let mut store = Store::open_in_memory().unwrap();
         let cfg = StoreConfig {
             fine_retention_days: 14,
-            daily_retention_days: 730,
             ..StoreConfig::default()
         };
         let app = store.upsert_app("/app", "app", 0).unwrap();

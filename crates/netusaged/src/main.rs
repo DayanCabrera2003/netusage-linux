@@ -81,7 +81,6 @@ fn config_command(action: crate::cli::ConfigAction) -> Result<()> {
             week_start,
             sample_interval_secs,
             fine_retention_days,
-            daily_retention_days,
         } => configure::set(
             &db,
             timezone,
@@ -89,7 +88,6 @@ fn config_command(action: crate::cli::ConfigAction) -> Result<()> {
             week_start,
             sample_interval_secs,
             fine_retention_days,
-            daily_retention_days,
         ),
     }
 }
