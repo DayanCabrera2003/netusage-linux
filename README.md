@@ -54,6 +54,24 @@ Para diagnosticar el entorno antes de instalar:
 netusaged --check
 ```
 
+### Gestión de datos
+
+El demonio conserva automáticamente solo lo que la interfaz muestra: el mes en
+curso y el mes anterior. Los datos previos se purgan en el ciclo de retención
+(cada 24 h).
+
+Para borrar a demanda el consumo de un periodo:
+
+```sh
+sudo netusaged clear --period today      # hoy
+sudo netusaged clear --period week       # esta semana
+sudo netusaged clear --period month      # este mes
+sudo netusaged clear --period last-month # mes anterior
+```
+
+Pide confirmación salvo que se pase `--yes`. Requiere `sudo` porque la base es
+propiedad del usuario de servicio `netusaged`.
+
 ## Stack eBPF
 
 Stack eBPF: aya (todo en Rust, kernel + usuario). Ver la decisión 0001 en la
