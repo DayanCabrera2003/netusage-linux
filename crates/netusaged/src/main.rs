@@ -8,6 +8,7 @@ mod attach;
 mod backfill;
 mod cgroup;
 mod check;
+mod clear;
 mod cli;
 mod configure;
 mod counters;
@@ -55,6 +56,7 @@ fn main() {
         Some(Command::Run { interval_secs, db }) => run(interval_secs, db),
         Some(Command::Report { period, db }) => report::run(period, &db),
         Some(Command::Config { action }) => config_command(action),
+        Some(Command::Clear { period, db, yes }) => clear::run(period, &db, yes),
         None => {
             println!(
                 "netusaged: sin acción. Usa --check para diagnosticar o `run` para monitorizar."

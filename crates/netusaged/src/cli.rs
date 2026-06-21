@@ -63,6 +63,21 @@ pub enum Command {
         #[command(subcommand)]
         action: ConfigAction,
     },
+
+    /// Borra los datos persistidos de un periodo (hoy/semana/mes/mes anterior).
+    Clear {
+        /// Periodo a borrar.
+        #[arg(long, value_enum)]
+        period: ReportPeriod,
+
+        /// Ruta de la base de datos SQLite.
+        #[arg(long)]
+        db: PathBuf,
+
+        /// No pedir confirmacion interactiva.
+        #[arg(long)]
+        yes: bool,
+    },
 }
 
 /// Acción del subcomando `config`.
