@@ -1,0 +1,33 @@
+# Scriptlets de pacman para el paquete netusage.
+#
+# Por convencion de Arch, los paquetes NO activan servicios automaticamente: se
+# deja al usuario. Aqui solo se recarga systemd y se informa de como activarlo.
+
+post_install() {
+    systemctl daemon-reload >/dev/null 2>&1 || true
+    cat <<'MSG'
+==> netusage: el servicio no se activa automaticamente (convencion de Arch).
+    Activalo (arranca el demonio y crea la base) con:
+        sudo systemctl enable --now netusaged
+    Comprueba que el sistema es apto con:
+        netusaged --check
+    Luego abre la interfaz con:
+        netusage-tui
+MSG
+}
+
+post_upgrade() {
+    systemctl daemon-reload >/dev/null 2>&1 || true
+    # Si estaba corriendo, reiniciar para tomar el binario y la unit nuevos.
+    if systemctl is-active --quiet netusaged.service; then
+        systemctl restart netusaged.service >/dev/null 2>&1 || true
+    fi
+}
+
+pre_remove() {
+    systemctl disable --now netusaged.service >/dev/null 2>&1 || true
+}
+
+post_remove() {
+    systemctl daemon-reload >/dev/null 2>&1 || true
+}
