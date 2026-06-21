@@ -28,24 +28,31 @@ pub fn draw(frame: &mut Frame, state: &AppState) {
         return;
     }
 
-    // Reservar una fila superior para el aviso de modo degradado solo si lo hay.
-    let banner_height = if state.degraded_note.is_some() { 1 } else { 0 };
+    // Reservar una fila superior por cada aviso presente: modo degradado
+    // (advertencia) y nueva release (informativo). Cada uno ocupa una linea solo
+    // si lo hay, de modo que sin avisos la interfaz se muestra limpia.
+    let degraded_height = if state.degraded_note.is_some() { 1 } else { 0 };
+    let update_height = if state.update_note.is_some() { 1 } else { 0 };
     let chunks = Layout::vertical([
-        Constraint::Length(banner_height), // aviso de modo degradado (opcional)
-        Constraint::Length(3),             // selector de periodo
-        Constraint::Length(3),             // resumen del periodo
-        Constraint::Min(1),                // lista de apps
-        Constraint::Length(1),             // ayuda
+        Constraint::Length(degraded_height), // aviso de modo degradado (opcional)
+        Constraint::Length(update_height),   // aviso de nueva release (opcional)
+        Constraint::Length(3),               // selector de periodo
+        Constraint::Length(3),               // resumen del periodo
+        Constraint::Min(1),                  // lista de apps
+        Constraint::Length(1),               // ayuda
     ])
     .split(area);
 
     if let Some(note) = &state.degraded_note {
         draw_degraded_banner(frame, chunks[0], note);
     }
-    period_bar::render(frame, chunks[1], state);
-    summary::render(frame, chunks[2], state);
-    app_list::render(frame, chunks[3], state);
-    footer::render(frame, chunks[4]);
+    if let Some(note) = &state.update_note {
+        draw_update_banner(frame, chunks[1], note);
+    }
+    period_bar::render(frame, chunks[2], state);
+    summary::render(frame, chunks[3], state);
+    app_list::render(frame, chunks[4], state);
+    footer::render(frame, chunks[5]);
 
     // El detalle se superpone al resto cuando está abierto.
     if state.show_detail {
@@ -61,6 +68,20 @@ fn draw_degraded_banner(frame: &mut Frame, area: Rect, note: &str) {
         Style::default()
             .fg(ratatui::style::Color::Black)
             .bg(theme::WARN)
+            .add_modifier(Modifier::BOLD),
+    )))
+    .alignment(Alignment::Center);
+    frame.render_widget(banner, area);
+}
+
+/// Barra superior de una linea con el aviso de nueva release, en color de acento
+/// (informativo, no de advertencia) para distinguirlo del aviso degradado.
+fn draw_update_banner(frame: &mut Frame, area: Rect, note: &str) {
+    let banner = Paragraph::new(Line::from(Span::styled(
+        format!(" {note} "),
+        Style::default()
+            .fg(ratatui::style::Color::Black)
+            .bg(theme::ACCENT)
             .add_modifier(Modifier::BOLD),
     )))
     .alignment(Alignment::Center);
@@ -138,6 +159,23 @@ mod tests {
         state.connection = ConnState::Ready;
         let text = render_to_lines(60, 14, |f| draw(f, &state)).join("\n");
         assert!(!text.contains("Modo degradado"), "{text}");
+    }
+
+    #[test]
+    fn update_note_shows_top_banner() {
+        let mut state = AppState::new(Period::Today);
+        state.connection = ConnState::Ready;
+        state.update_note = Some("Nueva version v0.2.0 disponible".into());
+        let text = render_to_lines(70, 14, |f| draw(f, &state)).join("\n");
+        assert!(text.contains("Nueva version v0.2.0 disponible"), "{text}");
+    }
+
+    #[test]
+    fn no_update_note_hides_banner() {
+        let mut state = AppState::new(Period::Today);
+        state.connection = ConnState::Ready;
+        let text = render_to_lines(70, 14, |f| draw(f, &state)).join("\n");
+        assert!(!text.contains("Nueva version"), "{text}");
     }
 
     #[test]

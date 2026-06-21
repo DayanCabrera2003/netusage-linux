@@ -6,6 +6,7 @@
 //! mensaje resultante. `ratatui::init` instala un hook de pánico que restaura la
 //! terminal, así que el teardown está garantizado incluso ante un panic.
 
+use std::sync::mpsc::Receiver;
 use std::time::{Duration, Instant};
 
 use ratatui::crossterm::event::{self, Event, KeyEventKind};
@@ -28,8 +29,19 @@ pub fn run(cli: Cli) -> Result<()> {
     state.degraded_note = crate::health::degraded_note();
     let refresh = Duration::from_secs(cli.refresh_secs.max(1));
 
+    // Chequeo de nueva release en segundo plano (opt-out con --no-update-check o
+    // NETUSAGE_NO_UPDATE_CHECK). No bloquea el arranque: el resultado, si lo hay,
+    // llega por el canal y se muestra como banner.
+    let update_rx = crate::release::spawn_check(crate::release::is_disabled(cli.no_update_check));
+
     let mut terminal = ratatui::init();
-    let result = run_loop(&mut terminal, &data, &mut state, refresh);
+    let result = run_loop(
+        &mut terminal,
+        &data,
+        &mut state,
+        refresh,
+        update_rx.as_ref(),
+    );
     ratatui::restore();
     result
 }
@@ -41,9 +53,20 @@ fn run_loop(
     data: &DataSource,
     state: &mut AppState,
     refresh: Duration,
+    update_rx: Option<&Receiver<String>>,
 ) -> Result<()> {
     let mut last_refresh = Instant::now();
     loop {
+        // Recoger sin bloquear el aviso de nueva release, si el hilo de fondo ya
+        // lo ha entregado. Llega como mucho una vez por sesion.
+        if state.update_note.is_none() {
+            if let Some(rx) = update_rx {
+                if let Ok(note) = rx.try_recv() {
+                    state.update_note = Some(note);
+                }
+            }
+        }
+
         // Un cambio de periodo (o el arranque) deja la conexión en Loading.
         if matches!(state.connection, ConnState::Loading) {
             load(data, state);

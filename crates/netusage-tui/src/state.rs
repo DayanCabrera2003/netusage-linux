@@ -27,6 +27,9 @@ pub struct AppState {
     pub show_detail: bool,
     /// Aviso de modo degradado del entorno, si lo hay (barra superior).
     pub degraded_note: Option<String>,
+    /// Aviso de nueva release disponible, si el chequeo en segundo plano la
+    /// encontro (barra superior). Llega en cualquier momento tras el arranque.
+    pub update_note: Option<String>,
 }
 
 impl AppState {
@@ -40,6 +43,7 @@ impl AppState {
             should_quit: false,
             show_detail: false,
             degraded_note: None,
+            update_note: None,
         }
     }
 

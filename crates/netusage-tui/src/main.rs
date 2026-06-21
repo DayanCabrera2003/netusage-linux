@@ -17,6 +17,7 @@ mod format;
 mod health;
 mod model;
 mod period;
+mod release;
 mod sort;
 mod state;
 mod ui;

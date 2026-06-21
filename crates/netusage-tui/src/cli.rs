@@ -21,6 +21,11 @@ pub struct Cli {
     /// Ruta de la base de datos del demonio (solo lectura).
     #[arg(long, default_value = "/var/lib/netusage/netusage.db")]
     pub db: PathBuf,
+
+    /// No comprobar si hay una version mas nueva en GitHub al arrancar.
+    /// Equivale a definir la variable de entorno NETUSAGE_NO_UPDATE_CHECK.
+    #[arg(long)]
+    pub no_update_check: bool,
 }
 
 /// Periodo seleccionable por CLI.
