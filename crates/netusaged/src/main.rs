@@ -120,10 +120,11 @@ fn run(interval_secs: u64, db: Option<PathBuf>) -> Result<()> {
         }
     }
 
-    let root = cgroup::cgroup_v2_root()?;
-    let bpf = loader::load()?;
-
-    // Si se pasó `--db`, persistir además de mostrar en vivo, y exponer el
+    // Crear/abrir la base de datos ANTES de cargar y enganchar eBPF. Asi la base
+    // existe siempre que el demonio llegue a arrancar, aunque la carga o el
+    // enganche de eBPF fallen despues: la interfaz encontrara una base que leer
+    // (vacia, pero valida) en lugar de un error de "base no disponible" que
+    // ocultaria el fallo real. Con `--db` ademas se persiste y se expone el
     // socket IPC de solo lectura.
     let sampler = match db {
         Some(path) => {
@@ -146,6 +147,11 @@ fn run(interval_secs: u64, db: Option<PathBuf>) -> Result<()> {
         }
         None => None,
     };
+
+    // Ya con la base creada, cargar y enganchar eBPF. El handle se transfiere al
+    // supervisor, que lo mantiene vivo durante toda la monitorizacion.
+    let root = cgroup::cgroup_v2_root()?;
+    let bpf = loader::load()?;
 
     supervisor::run(bpf, &root, Duration::from_secs(interval_secs), sampler)
 }
