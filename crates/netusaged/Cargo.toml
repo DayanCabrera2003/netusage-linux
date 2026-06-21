@@ -61,5 +61,28 @@ assets = [
     { source = "../../packaging/systemd/sysusers.d/netusaged.conf", dest = "/usr/lib/sysusers.d/netusaged.conf", mode = "644" },
     { source = "../../packaging/systemd/tmpfiles.d/netusaged.conf", dest = "/usr/lib/tmpfiles.d/netusaged.conf", mode = "644" },
 ]
-# Crea el usuario de sistema y los directorios tras instalar.
-post_install_script = "systemd-sysusers /usr/lib/sysusers.d/netusaged.conf >/dev/null 2>&1 || true\nsystemd-tmpfiles --create /usr/lib/tmpfiles.d/netusaged.conf >/dev/null 2>&1 || true"
+# Tras instalar: crea el usuario de sistema y los directorios, y activa el
+# servicio para que el demonio arranque y cree la base sin intervencion manual.
+post_install_script = """
+systemd-sysusers /usr/lib/sysusers.d/netusaged.conf >/dev/null 2>&1 || true
+systemd-tmpfiles --create /usr/lib/tmpfiles.d/netusaged.conf >/dev/null 2>&1 || true
+systemctl daemon-reload >/dev/null 2>&1 || true
+systemctl enable netusaged.service >/dev/null 2>&1 || true
+if [ -d /run/systemd/system ]; then
+    systemctl start netusaged.service >/dev/null 2>&1 || true
+fi
+"""
+# Antes de la eliminacion definitiva (no en upgrade, donde $1 >= 1): detener y
+# desactivar el servicio.
+pre_uninstall_script = """
+if [ "$1" = "0" ]; then
+    systemctl --no-reload disable netusaged.service >/dev/null 2>&1 || true
+    if [ -d /run/systemd/system ]; then
+        systemctl stop netusaged.service >/dev/null 2>&1 || true
+    fi
+fi
+"""
+# Tras eliminar: recargar systemd para que olvide la unit retirada.
+post_uninstall_script = """
+systemctl daemon-reload >/dev/null 2>&1 || true
+"""
