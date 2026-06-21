@@ -22,3 +22,10 @@ chrono = { version = "0.4", default-features = false, features = ["clock", "std"
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 thiserror = "2"
+# Aviso de nueva release: cliente HTTP+TLS (rustls) para consultar la API de
+# GitHub, parseo del JSON de la respuesta y comparacion semver de versiones. El
+# chequeo corre solo en la TUI (el demonio esta sandboxeado sin red) y es
+# desactivable; ver el modulo `release`.
+ureq = "3"
+serde_json = "1"
+semver = "1"
