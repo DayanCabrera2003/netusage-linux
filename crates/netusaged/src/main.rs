@@ -100,32 +100,13 @@ fn config_command(action: crate::cli::ConfigAction) -> Result<()> {
 /// toda la monitorización: al dropearse se desenganchan los programas y se
 /// liberan los mapas.
 fn run(interval_secs: u64, db: Option<PathBuf>) -> Result<()> {
-    // Verificar el privilegio mínimo y reportarlo antes de tocar eBPF.
-    let mode = privileges::ensure_minimum()?;
-    tracing::info!("netusaged corriendo con {}", mode.describe());
-
-    // Evaluar el entorno y decidir el modo de ejecución antes de cargar eBPF,
-    // para fallar con un mensaje claro en vez de un panic en el loader.
-    let env = netusage_common::preflight::EnvReport::gather();
-    let decision = degraded::decide(&env);
-    match decision.mode {
-        degraded::RunMode::Disabled => {
-            anyhow::bail!("entorno no apto para netusaged: {}", decision.reason);
-        }
-        degraded::RunMode::NoPerApp => {
-            tracing::warn!("modo degradado: {}", decision.reason);
-        }
-        degraded::RunMode::Full => {
-            tracing::info!("{}", decision.reason);
-        }
-    }
-
-    // Crear/abrir la base de datos ANTES de cargar y enganchar eBPF. Asi la base
-    // existe siempre que el demonio llegue a arrancar, aunque la carga o el
-    // enganche de eBPF fallen despues: la interfaz encontrara una base que leer
-    // (vacia, pero valida) en lugar de un error de "base no disponible" que
-    // ocultaria el fallo real. Con `--db` ademas se persiste y se expone el
-    // socket IPC de solo lectura.
+    // Crear/abrir la base de datos lo PRIMERO, antes de cualquier chequeo de
+    // privilegios o de entorno. Asi la base existe siempre que el demonio se
+    // ejecute con `--db`, aunque despues aborte porque el entorno no es apto o
+    // falten privilegios: la interfaz podra abrirla y mostrar el diagnostico
+    // real (p. ej. con `netusaged --check`) en vez de un error opaco de "base no
+    // disponible". Con `--db` ademas se persiste y se expone el socket IPC de
+    // solo lectura.
     let sampler = match db {
         Some(path) => {
             let store = Store::open(&path)
@@ -148,8 +129,28 @@ fn run(interval_secs: u64, db: Option<PathBuf>) -> Result<()> {
         None => None,
     };
 
-    // Ya con la base creada, cargar y enganchar eBPF. El handle se transfiere al
-    // supervisor, que lo mantiene vivo durante toda la monitorizacion.
+    // Verificar el privilegio mínimo y reportarlo antes de tocar eBPF.
+    let mode = privileges::ensure_minimum()?;
+    tracing::info!("netusaged corriendo con {}", mode.describe());
+
+    // Evaluar el entorno y decidir el modo de ejecución antes de cargar eBPF,
+    // para fallar con un mensaje claro en vez de un panic en el loader.
+    let env = netusage_common::preflight::EnvReport::gather();
+    let decision = degraded::decide(&env);
+    match decision.mode {
+        degraded::RunMode::Disabled => {
+            anyhow::bail!("entorno no apto para netusaged: {}", decision.reason);
+        }
+        degraded::RunMode::NoPerApp => {
+            tracing::warn!("modo degradado: {}", decision.reason);
+        }
+        degraded::RunMode::Full => {
+            tracing::info!("{}", decision.reason);
+        }
+    }
+
+    // Cargar y enganchar eBPF. El handle se transfiere al supervisor, que lo
+    // mantiene vivo durante toda la monitorizacion.
     let root = cgroup::cgroup_v2_root()?;
     let bpf = loader::load()?;
 
