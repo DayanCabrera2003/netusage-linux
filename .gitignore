@@ -4,4 +4,7 @@ target/
 # Copias de seguridad de rustfmt.
 **/*.rs.bk
 
+# Artefactos de trabajo de Claude (specs y planes de las skills). No van al repo.
+docs/superpowers/
+
 # Cargo.lock se versiona: el workspace produce binarios y queremos builds reproducibles.
