@@ -22,6 +22,40 @@ Guias por distribucion:
 - [Arch / derivadas](docs/install/arch.md) — PKGBUILD
 - [Cualquier distro](docs/install/manual-musl.md) — binario estatico musl
 
+### Compilar e instalar desde el codigo (o actualizar)
+
+Requiere la toolchain de Rust con `nightly` + `rust-src` y `bpf-linker` para el
+crate eBPF (ver las guias de arriba). El crate eBPF se compila automaticamente
+via `build.rs`.
+
+```sh
+# 1. Compilar ambos binarios.
+cargo build --release -p netusaged -p netusage-tui
+
+# 2. Instalar los binarios.
+sudo install -m 0755 target/release/netusaged    /usr/bin/netusaged
+sudo install -m 0755 target/release/netusage-tui /usr/bin/netusage-tui
+
+# 3. Instalar/actualizar la unit systemd y los ficheros de usuario/directorios.
+sudo install -m 0644 packaging/systemd/netusaged.service \
+    /usr/lib/systemd/system/netusaged.service
+sudo install -m 0644 packaging/systemd/sysusers.d/netusaged.conf \
+    /usr/lib/sysusers.d/netusaged.conf
+sudo install -m 0644 packaging/systemd/tmpfiles.d/netusaged.conf \
+    /usr/lib/tmpfiles.d/netusaged.conf
+sudo systemd-sysusers
+sudo systemd-tmpfiles --create
+
+# 4. Activar (primera vez) o reiniciar (al actualizar).
+sudo systemctl daemon-reload
+sudo systemctl enable --now netusaged   # primera instalacion
+sudo systemctl restart netusaged        # al actualizar
+```
+
+Al actualizar, reinstala tambien la unit (paso 3): las capabilities del servicio
+(`CAP_SYS_PTRACE`, `CAP_DAC_READ_SEARCH`) viven en ese fichero y son necesarias
+para la atribucion por aplicacion.
+
 ## Uso
 
 Arranca el demonio (una sola vez; systemd lo mantiene activo en reinicios):
