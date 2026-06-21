@@ -7,6 +7,7 @@
 mod aggregate;
 mod apps;
 mod config;
+mod delete;
 mod error;
 mod period;
 mod retention;
