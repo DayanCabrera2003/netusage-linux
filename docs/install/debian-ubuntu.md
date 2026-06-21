@@ -10,14 +10,22 @@ sudo apt install ./netusaged_*.deb
 ```
 
 El paquete instala los binarios en `/usr/bin`, la unit systemd, y ejecuta su
-`postinst` para crear el usuario de sistema `netusaged` y los directorios de
-estado (`/var/lib/netusage`) y runtime (`/run/netusage`).
+`postinst` para crear el usuario de sistema `netusaged`, los directorios de
+estado (`/var/lib/netusage`) y runtime (`/run/netusage`), y **activar y arrancar
+el servicio** automáticamente. Al arrancar, el demonio crea la base de datos.
 
-Activa el servicio:
+Comprueba que está activo y abre la interfaz:
+
+```sh
+systemctl status netusaged
+netusage-tui
+```
+
+Si no quedó activo (p. ej. instalación en un entorno sin systemd corriendo),
+actívalo a mano:
 
 ```sh
 sudo systemctl enable --now netusaged
-netusage-tui
 ```
 
 ## Construir el `.deb` desde el código

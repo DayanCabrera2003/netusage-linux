@@ -12,13 +12,22 @@ sudo zypper install ./netusaged-*.rpm  # openSUSE
 
 El paquete instala los binarios en `/usr/bin`, la unit systemd, y su scriptlet
 de postinstalación crea el usuario de sistema `netusaged` y los directorios de
-estado y runtime mediante `systemd-sysusers` y `systemd-tmpfiles`.
+estado y runtime mediante `systemd-sysusers` y `systemd-tmpfiles`, y además
+**activa y arranca el servicio** automáticamente. Al arrancar, el demonio crea
+la base de datos.
 
-Activa el servicio:
+Comprueba que está activo y abre la interfaz:
+
+```sh
+systemctl status netusaged
+netusage-tui
+```
+
+Si no quedó activo (p. ej. instalación en un entorno sin systemd corriendo),
+actívalo a mano:
 
 ```sh
 sudo systemctl enable --now netusaged
-netusage-tui
 ```
 
 ## Construir el `.rpm` desde el código
