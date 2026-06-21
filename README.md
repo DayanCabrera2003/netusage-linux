@@ -73,6 +73,12 @@ netusage-tui
 La TUI muestra el consumo de red total y por aplicación con selector de
 periodo (hoy / semana / mes / mes anterior).
 
+Al arrancar, la interfaz comprueba en segundo plano si hay una versión más
+nueva publicada en GitHub y, si la hay, muestra un aviso en la barra superior.
+La comprobación usa una caché de 24 h, es silenciosa cuando no hay conexión y
+se puede desactivar con `--no-update-check` o la variable de entorno
+`NETUSAGE_NO_UPDATE_CHECK`.
+
 | Tecla | Accion |
 |-------|--------|
 | `Tab` / `→` | Periodo siguiente |
