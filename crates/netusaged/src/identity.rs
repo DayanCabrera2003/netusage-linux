@@ -67,15 +67,53 @@ fn namespace_by_uid(uid: u32, app_key: &str) -> String {
 /// Construye la identidad a partir de la ruta del ejecutable (lógica pura).
 pub fn identity_from_exe_path(exe: &Path) -> AppIdentity {
     let app_key = exe.to_string_lossy().into_owned();
-    let display_name = exe
-        .file_name()
-        .map(|n| n.to_string_lossy().into_owned())
-        .filter(|n| !n.is_empty())
-        .unwrap_or_else(|| app_key.clone());
+    let display_name = display_name_for(exe).unwrap_or_else(|| app_key.clone());
     AppIdentity {
         app_key,
         display_name,
     }
+}
+
+/// Nombre visible para una ruta de ejecutable. Normalmente es el basename, pero
+/// si este parece un número de versión (binarios instalados como
+/// `.../app/versions/2.1.176`), sube por la ruta saltando los segmentos
+/// genéricos hasta el primer componente descriptivo, devolviendo "app" en vez
+/// del número de versión. La `app_key` no se toca: sigue siendo la ruta.
+fn display_name_for(exe: &Path) -> Option<String> {
+    let names: Vec<&str> = exe
+        .components()
+        .filter_map(|c| match c {
+            std::path::Component::Normal(s) => s.to_str(),
+            _ => None,
+        })
+        .collect();
+    let base = *names.last()?;
+    if base.is_empty() {
+        return None;
+    }
+    if !looks_like_version(base) {
+        return Some(base.to_string());
+    }
+    // Segmentos de ruta que no identifican una app: se saltan al subir.
+    const GENERIC: [&str; 9] = [
+        "versions", "version", "bin", "sbin", "current", "releases", "release", "dist", "build",
+    ];
+    names
+        .iter()
+        .rev()
+        .skip(1)
+        .copied()
+        .find(|&c| !looks_like_version(c) && !GENERIC.contains(&c))
+        .map(str::to_string)
+        .or_else(|| Some(base.to_string()))
+}
+
+/// Indica si un componente de ruta parece un número de versión (`2.1.176`,
+/// `v1.2.3`): solo dígitos y puntos, con al menos un punto para no confundir un
+/// binario llamado, por ejemplo, `7z` o `176`.
+fn looks_like_version(s: &str) -> bool {
+    let s = s.strip_prefix('v').unwrap_or(s);
+    s.contains('.') && s.chars().all(|c| c.is_ascii_digit() || c == '.')
 }
 
 /// Intérpretes conocidos cuyo "app real" está en el cmdline.
@@ -298,6 +336,34 @@ mod tests {
         let id = identity_from_exe_path(Path::new("/usr/lib/firefox/firefox"));
         assert_eq!(id.app_key, "/usr/lib/firefox/firefox");
         assert_eq!(id.display_name, "firefox");
+    }
+
+    #[test]
+    fn version_named_binary_uses_parent_dir() {
+        // Binario instalado como .../app/versions/<version>: el basename es la
+        // version, asi que el nombre visible debe ser el directorio de la app.
+        let id = identity_from_exe_path(Path::new(
+            "/home/u/.local/share/claude/versions/2.1.176",
+        ));
+        assert_eq!(id.display_name, "claude");
+        // La clave conserva la ruta completa (cada version es un ejecutable).
+        assert_eq!(id.app_key, "/home/u/.local/share/claude/versions/2.1.176");
+    }
+
+    #[test]
+    fn version_with_v_prefix_uses_parent_dir() {
+        let id = identity_from_exe_path(Path::new("/opt/foo/v1.2.3"));
+        assert_eq!(id.display_name, "foo");
+    }
+
+    #[test]
+    fn detects_version_like_strings() {
+        assert!(looks_like_version("2.1.176"));
+        assert!(looks_like_version("v1.2.3"));
+        assert!(looks_like_version("1.0"));
+        assert!(!looks_like_version("firefox"));
+        assert!(!looks_like_version("176")); // sin punto: no es version
+        assert!(!looks_like_version("log4j-2.17"));
     }
 
     #[test]
