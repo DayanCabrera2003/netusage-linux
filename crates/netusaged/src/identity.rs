@@ -342,9 +342,7 @@ mod tests {
     fn version_named_binary_uses_parent_dir() {
         // Binario instalado como .../app/versions/<version>: el basename es la
         // version, asi que el nombre visible debe ser el directorio de la app.
-        let id = identity_from_exe_path(Path::new(
-            "/home/u/.local/share/claude/versions/2.1.176",
-        ));
+        let id = identity_from_exe_path(Path::new("/home/u/.local/share/claude/versions/2.1.176"));
         assert_eq!(id.display_name, "claude");
         // La clave conserva la ruta completa (cada version es un ejecutable).
         assert_eq!(id.app_key, "/home/u/.local/share/claude/versions/2.1.176");

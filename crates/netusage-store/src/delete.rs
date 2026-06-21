@@ -41,16 +41,42 @@ mod tests {
         let app = store.upsert_app("/app", "app", 0).unwrap();
         // Sin config guardada -> default (UTC, ciclo 1). Hoy = 2026-03-15.
         let now = Utc.with_ymd_and_hms(2026, 3, 15, 12, 0, 0).unwrap();
-        let ts_today = Utc.with_ymd_and_hms(2026, 3, 15, 9, 0, 0).unwrap().timestamp();
-        let ts_yesterday = Utc.with_ymd_and_hms(2026, 3, 14, 9, 0, 0).unwrap().timestamp();
-        let day_today = Utc.with_ymd_and_hms(2026, 3, 15, 0, 0, 0).unwrap().timestamp();
-        let day_yesterday = Utc.with_ymd_and_hms(2026, 3, 14, 0, 0, 0).unwrap().timestamp();
+        let ts_today = Utc
+            .with_ymd_and_hms(2026, 3, 15, 9, 0, 0)
+            .unwrap()
+            .timestamp();
+        let ts_yesterday = Utc
+            .with_ymd_and_hms(2026, 3, 14, 9, 0, 0)
+            .unwrap()
+            .timestamp();
+        let day_today = Utc
+            .with_ymd_and_hms(2026, 3, 15, 0, 0, 0)
+            .unwrap()
+            .timestamp();
+        let day_yesterday = Utc
+            .with_ymd_and_hms(2026, 3, 14, 0, 0, 0)
+            .unwrap()
+            .timestamp();
 
         store
-            .insert_samples(ts_today, &[crate::samples::SampleDelta { app_id: app, rx_bytes: 1, tx_bytes: 1 }])
+            .insert_samples(
+                ts_today,
+                &[crate::samples::SampleDelta {
+                    app_id: app,
+                    rx_bytes: 1,
+                    tx_bytes: 1,
+                }],
+            )
             .unwrap();
         store
-            .insert_samples(ts_yesterday, &[crate::samples::SampleDelta { app_id: app, rx_bytes: 2, tx_bytes: 2 }])
+            .insert_samples(
+                ts_yesterday,
+                &[crate::samples::SampleDelta {
+                    app_id: app,
+                    rx_bytes: 2,
+                    tx_bytes: 2,
+                }],
+            )
             .unwrap();
         for d in [day_today, day_yesterday] {
             store
@@ -65,8 +91,14 @@ mod tests {
         let (s, d) = store.delete_period(Period::Today, now).unwrap();
         assert_eq!((s, d), (1, 1)); // borra solo lo de hoy en cada tabla
 
-        let samples: i64 = store.conn.query_row("SELECT count(*) FROM samples", [], |r| r.get(0)).unwrap();
-        let daily: i64 = store.conn.query_row("SELECT count(*) FROM daily", [], |r| r.get(0)).unwrap();
+        let samples: i64 = store
+            .conn
+            .query_row("SELECT count(*) FROM samples", [], |r| r.get(0))
+            .unwrap();
+        let daily: i64 = store
+            .conn
+            .query_row("SELECT count(*) FROM daily", [], |r| r.get(0))
+            .unwrap();
         assert_eq!((samples, daily), (1, 1)); // queda lo de ayer en cada tabla
     }
 }

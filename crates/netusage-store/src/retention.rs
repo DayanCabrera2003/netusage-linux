@@ -172,7 +172,11 @@ mod tests {
         let now = Utc.with_ymd_and_hms(2026, 3, 15, 12, 0, 0).unwrap();
         let day = |y, m, d| Utc.with_ymd_and_hms(y, m, d, 0, 0, 0).unwrap().timestamp();
         // Tres agregados diarios: este mes, mes anterior, y dos meses atras.
-        for (d, rx) in [(day(2026, 3, 5), 1i64), (day(2026, 2, 10), 2), (day(2026, 1, 10), 3)] {
+        for (d, rx) in [
+            (day(2026, 3, 5), 1i64),
+            (day(2026, 2, 10), 2),
+            (day(2026, 1, 10), 3),
+        ] {
             store
                 .conn
                 .execute(
@@ -211,15 +215,25 @@ mod tests {
         // curso empezo el 2026-03-30 (mes anterior por calendario). El corte de
         // purga (1 mar, inicio del mes anterior) NO debe tocar esa semana.
         let now = Utc.with_ymd_and_hms(2026, 4, 1, 12, 0, 0).unwrap();
-        let ts_week_start = Utc.with_ymd_and_hms(2026, 3, 30, 10, 0, 0).unwrap().timestamp();
+        let ts_week_start = Utc
+            .with_ymd_and_hms(2026, 3, 30, 10, 0, 0)
+            .unwrap()
+            .timestamp();
         store
             .insert_samples(
                 ts_week_start,
-                &[crate::samples::SampleDelta { app_id: app, rx_bytes: 7, tx_bytes: 0 }],
+                &[crate::samples::SampleDelta {
+                    app_id: app,
+                    rx_bytes: 7,
+                    tx_bytes: 0,
+                }],
             )
             .unwrap();
         // Diario de dos meses atras (anterior al corte 1 mar): debe purgarse.
-        let day_old = Utc.with_ymd_and_hms(2026, 2, 15, 0, 0, 0).unwrap().timestamp();
+        let day_old = Utc
+            .with_ymd_and_hms(2026, 2, 15, 0, 0, 0)
+            .unwrap()
+            .timestamp();
         store
             .conn
             .execute(
@@ -233,12 +247,16 @@ mod tests {
         // La muestra de la semana en curso sobrevive; el diario viejo se purga.
         let week_sample: i64 = store
             .conn
-            .query_row("SELECT count(*) FROM samples WHERE rx_bytes = 7", [], |r| r.get(0))
+            .query_row("SELECT count(*) FROM samples WHERE rx_bytes = 7", [], |r| {
+                r.get(0)
+            })
             .unwrap();
         assert_eq!(week_sample, 1);
         let old_daily: i64 = store
             .conn
-            .query_row("SELECT count(*) FROM daily WHERE rx_bytes = 9", [], |r| r.get(0))
+            .query_row("SELECT count(*) FROM daily WHERE rx_bytes = 9", [], |r| {
+                r.get(0)
+            })
             .unwrap();
         assert_eq!(old_daily, 0);
     }
